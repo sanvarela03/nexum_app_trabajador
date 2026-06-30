@@ -67,10 +67,6 @@ data class SignUpState(
 ) {
     val isValidToContinue: Boolean
         get() = emailError.not() &&
-                tosAccepted &&
-                policyAccepted &&
-                showPolicyDialog.not() &&
-                showTosDialog.not() &&
                 email.isNotEmpty()
 
     val isUserDataValid: Boolean

@@ -15,12 +15,11 @@ object SignUpValidator {
         val emailRegex = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
 
-        val isValid = emailRegex.matches(email) && email.length >= 4 && email.length <= 20
+        val isValid = emailRegex.matches(email) && email.length >= 4
 
         val errorMessage = when {
             !emailRegex.matches(email) -> "Invalid email format."
             email.length < 4 -> "Email is too short (minimum 4 characters)."
-            email.length > 20 -> "Email is too long (maximum 19 characters)."
             else -> ""
         }
 

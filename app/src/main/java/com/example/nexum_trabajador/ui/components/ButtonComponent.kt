@@ -45,7 +45,6 @@ fun ButtonComponent(
             Text(
                 text = value,
                 fontSize = 20.sp,
-                color = Color.White,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -77,7 +76,6 @@ fun ButtonComponent(
             Text(
                 text = value,
                 fontSize = 20.sp,
-                color = Color.White,
                 fontWeight = FontWeight.Medium
             )
         }
