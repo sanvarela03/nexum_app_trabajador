@@ -12,7 +12,7 @@ import com.example.nexum_trabajador.ui.common.ValidationResult
  */
 object SignInValidator {
     fun validateEmail(email: String?): ValidationResult = ValidationResult(
-        !email.isNullOrEmpty() && email.length >= 4 && email.length <= 20,
+        !email.isNullOrEmpty() && email.length >= 4,
         "Email cannot be empty."
     )
 
