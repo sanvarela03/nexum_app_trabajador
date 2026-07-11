@@ -20,7 +20,7 @@ class AuthInterceptor
         Log.d("INTERCEP THOR !!!", "$accessToken")
 
         val request = chain.request().newBuilder()
-        request.addHeader("Authorization", "Bearer $accessToken")
+        request.header("Authorization", "Bearer $accessToken")
         return chain.proceed(request.build())
     }
 }
