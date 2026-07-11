@@ -10,6 +10,7 @@ import com.example.nexum_trabajador.data.global_payload.res.ApiResponse
 import com.example.nexum_trabajador.domain.use_cases.auth.AuthUseCases
 import com.example.nexum_trabajador.domain.use_cases.sign_in.SaveLastUserEmailUseCase
 import com.example.nexum_trabajador.domain.use_cases.worker.WorkerUseCases
+import com.example.nexum_trabajador.security.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -23,12 +24,15 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val authUseCases: AuthUseCases,
     private val workerUseCases: WorkerUseCases,
-    private val saveLastUserEmailUseCase: SaveLastUserEmailUseCase
+    private val saveLastUserEmailUseCase: SaveLastUserEmailUseCase,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     var state by mutableStateOf(HomeState())
     var signOutJob: Job? = null
     var getProducerJob: Job? = null
+
+    fun getUserId() = tokenManager.getUserId()
 
     init {
         Log.d("HomeViewModel", " init ")

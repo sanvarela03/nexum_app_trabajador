@@ -1,11 +1,15 @@
 package com.example.nexum_trabajador.ui.navigation.graphs
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.example.nexum_trabajador.ui.navigation.rutes.DrawerRoutes
 import com.example.nexum_trabajador.ui.navigation.rutes.HomeRoutes
+import com.example.nexum_trabajador.ui.presenter.chat.ChatScreen
+import com.example.nexum_trabajador.ui.presenter.conversations.ConversationsScreen
 import com.example.nexum_trabajador.ui.presenter.home.HomeViewModel
 import com.example.nexum_trabajador.ui.presenter.landing.LandingScreen
 import com.example.nexum_trabajador.ui.presenter.notifications.NotificationsScreen
@@ -29,9 +33,11 @@ import androidx.navigation.toRoute
  * @since 8/4/2025
  * @version 1.0
  */
+@RequiresApi(Build.VERSION_CODES.O)
 fun NavGraphBuilder.homeGraph(
     navController: NavController,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    currentUserId: Long? = null
 ) {
     navigation<Graph.HomeGraph>(startDestination = HomeRoutes.CategoriesScreen) {
         composable<HomeRoutes.CategoriesScreen> {
@@ -44,6 +50,32 @@ fun NavGraphBuilder.homeGraph(
         }
         composable<HomeRoutes.WalletScreen> {
 
+        }
+
+        composable<HomeRoutes.ConversationsScreen> {
+            ConversationsScreen(
+                currentUserId = currentUserId.toString(),
+                onConversationClick = { conversationId, otherUserId, otherUserRole ->
+                    navController.navigate(
+                        HomeRoutes.ChatScreen(
+                            conversationId = conversationId,
+                            receiverId = otherUserId,
+                            receiverRole = otherUserRole,
+                            currentUserId = currentUserId.toString()
+                        )
+                    )
+                }
+            )
+        }
+        composable<HomeRoutes.ChatScreen> { backStackEntry ->
+            val args = backStackEntry.toRoute<HomeRoutes.ChatScreen>()
+            ChatScreen(
+                conversationId = args.conversationId,
+                receiverId = args.receiverId,
+                receiverRole = args.receiverRole,
+                currentUserId = args.currentUserId,
+                onNavigateBack = { navController.navigateUp() }
+            )
         }
 
         composable<HomeRoutes.NotificationsScreen> {

@@ -29,6 +29,17 @@ sealed class HomeRoutes {
     object NotificationsScreen : HomeRoutes()
 
     @Serializable
+    object ConversationsScreen : HomeRoutes()
+
+    @Serializable
+    data class ChatScreen(
+        val conversationId: String,
+        val receiverId: String,
+        val receiverRole: String,
+        val currentUserId: String
+    ) : HomeRoutes()
+
+    @Serializable
     data class JobOfferDetailsScreen(val uuid: String) : HomeRoutes()
 
     @Serializable

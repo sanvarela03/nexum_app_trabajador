@@ -2,8 +2,10 @@ package com.example.nexum_trabajador.ui.presenter.home
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import android.os.Build
 import android.view.Gravity
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,7 +20,10 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -43,6 +48,7 @@ import com.example.nexum_trabajador.ui.navigation.graphs.homeGraph
 import com.example.nexum_trabajador.ui.navigation.rutes.DrawerRoutes
 import com.example.nexum_trabajador.ui.navigation.rutes.HomeRoutes
 import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 /**
@@ -54,12 +60,19 @@ import kotlinx.coroutines.launch
  */
 import android.content.Intent
 
+@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("RestrictedApi")
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     initialIntent: Intent? = null
 ) {
+    var currentUserId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    LaunchedEffect(Unit) {
+        currentUserId = homeViewModel.getUserId().firstOrNull()
+    }
+
     val homeNavController = rememberNavController()
     val scope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -126,7 +139,8 @@ fun HomeScreen(
         homeGraph = {
             homeGraph(
                 navController = homeNavController,
-                homeViewModel = homeViewModel
+                homeViewModel = homeViewModel,
+                currentUserId = currentUserId
             )
         }
     )
@@ -154,6 +168,7 @@ private fun HomeScreenContent(
         HomeRoutes.CategoriesScreen,
         HomeRoutes.RequestsScreen,
         HomeRoutes.WalletScreen,
+        HomeRoutes.ConversationsScreen,
         HomeRoutes.NotificationsScreen
     )
 
