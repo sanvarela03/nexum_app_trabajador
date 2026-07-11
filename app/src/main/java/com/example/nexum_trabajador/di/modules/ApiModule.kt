@@ -4,6 +4,7 @@ import com.example.nexum_trabajador.common.HOST_URL
 import com.example.nexum_trabajador.data.auth.remote.AuthApi
 import com.example.nexum_trabajador.data.country.remote.CountryApi
 import com.example.nexum_trabajador.data.market_location.remote.MarketLocationApi
+import com.example.nexum_trabajador.data.profile.remote.ProfileApi
 import com.example.nexum_trabajador.data.worker.remote.WorkerApi
 import com.example.nexum_trabajador.security.AuthAuthenticator
 import com.example.nexum_trabajador.security.AuthInterceptor
@@ -104,4 +105,14 @@ object ApiModule {
         .client(okHttpClient)
         .build()
         .create(com.example.nexum_trabajador.data.job_application.remote.JobApplicationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideProfileApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): ProfileApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(ProfileApi::class.java)
 }

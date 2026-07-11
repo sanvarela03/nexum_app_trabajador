@@ -6,6 +6,7 @@ import com.example.nexum_trabajador.data.market_location.local.MarketLocationDao
 import com.example.nexum_trabajador.data.notification.local.NotificationDao
 import com.example.nexum_trabajador.data.worker.local.WorkerDao
 import com.example.nexum_trabajador.data.job_application.local.JobApplicationDraftDao
+import com.example.nexum_trabajador.data.profile.local.ProfileDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -34,4 +35,8 @@ object DaoModule {
     @Provides
     @Singleton
     fun provideJobApplicationDraftDao(workerDb: WorkerDb): JobApplicationDraftDao = workerDb.jobApplicationDraftDao
+
+    @Provides
+    @Singleton
+    fun provideProfileDao(workerDb: WorkerDb): ProfileDao = workerDb.profileDao
 }

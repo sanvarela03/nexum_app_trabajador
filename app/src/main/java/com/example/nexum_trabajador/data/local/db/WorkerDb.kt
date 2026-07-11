@@ -12,6 +12,8 @@ import com.example.nexum_trabajador.data.worker.local.WorkerDao
 import com.example.nexum_trabajador.data.worker.local.WorkerEntity
 import com.example.nexum_trabajador.data.job_application.local.JobApplicationDraftEntity
 import com.example.nexum_trabajador.data.job_application.local.JobApplicationDraftDao
+import com.example.nexum_trabajador.data.profile.local.ProfileDao
+import com.example.nexum_trabajador.data.profile.local.ProfileEntity
 
 @Database(
     entities = [
@@ -19,9 +21,10 @@ import com.example.nexum_trabajador.data.job_application.local.JobApplicationDra
         MarketLocationEntity::class,
         WorkerEntity::class,
         NotificationEntity::class,
-        JobApplicationDraftEntity::class
+        JobApplicationDraftEntity::class,
+        ProfileEntity::class
     ],
-    version = 4
+    version = 5
 )
 abstract class WorkerDb : RoomDatabase() {
     abstract val countryDao: CountryDao
@@ -29,4 +32,5 @@ abstract class WorkerDb : RoomDatabase() {
     abstract val workerDao: WorkerDao
     abstract val notificationDao: NotificationDao
     abstract val jobApplicationDraftDao: JobApplicationDraftDao
+    abstract val profileDao: ProfileDao
 }

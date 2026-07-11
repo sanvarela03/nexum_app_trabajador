@@ -8,16 +8,22 @@ import com.example.nexum_trabajador.data.country.remote.CountryRemoteDataSource
 import com.example.nexum_trabajador.data.market_location.MarketLocationRepositoryImpl
 import com.example.nexum_trabajador.data.market_location.local.MarketLocationLocalDataSource
 import com.example.nexum_trabajador.data.market_location.remote.MarketLocationRemoteDataSource
+import com.example.nexum_trabajador.data.message.MessagingRepositoryImpl
 import com.example.nexum_trabajador.data.notification.NotificationRepositoryImpl
 import com.example.nexum_trabajador.data.notification.local.NotificationLocalDataSource
+import com.example.nexum_trabajador.data.profile.ProfileRepositoryImpl
+import com.example.nexum_trabajador.data.profile.local.ProfileLocalDataSource
+import com.example.nexum_trabajador.data.profile.remote.ProfileRemoteDataSource
 import com.example.nexum_trabajador.data.worker.WorkerRepositoryImpl
 import com.example.nexum_trabajador.data.worker.local.WorkerLocalDataSource
 import com.example.nexum_trabajador.data.worker.remote.WorkerRemoteDataSource
 import com.example.nexum_trabajador.domain.repository.AuthRepository
 import com.example.nexum_trabajador.domain.repository.CountryRepository
 import com.example.nexum_trabajador.domain.repository.MarketLocationRepository
+import com.example.nexum_trabajador.domain.repository.MessagingRepository
 import com.example.nexum_trabajador.domain.repository.NotificationRepository
 import com.example.nexum_trabajador.domain.repository.JobApplicationRepository
+import com.example.nexum_trabajador.domain.repository.ProfileRepository
 import com.example.nexum_trabajador.domain.repository.WorkerRepository
 import com.example.nexum_trabajador.security.TokenManager
 import dagger.Module
@@ -85,6 +91,24 @@ object RepositoryModule {
         localDataSource: NotificationLocalDataSource
     ): NotificationRepository = NotificationRepositoryImpl(
         localDataSource = localDataSource
+    )
+
+    @Provides
+    @Singleton
+    fun provideMessagingRepository(
+        impl: MessagingRepositoryImpl
+    ): MessagingRepository = impl
+
+    @Provides
+    @Singleton
+    fun provideProfileRepository(
+        remote: ProfileRemoteDataSource,
+        local: ProfileLocalDataSource,
+        @IoDispatcher dispatcher: CoroutineDispatcher
+    ): ProfileRepository = ProfileRepositoryImpl(
+        remote = remote,
+        local = local,
+        dispatcher = dispatcher
     )
 
     @Provides
