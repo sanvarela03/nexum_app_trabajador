@@ -208,12 +208,13 @@ private fun HomeScreenContent(
                 }
             },
             bottomBar = {
-                // Mantenemos la BottomBar visible para navegación rápida
-                HomeBottomBar(
-                    navigationItems = BottomNavigation.entries,
-                    currentDestination = currentDestination,
-                    navigateTo = onBottomNavigate
-                )
+                if (showBars) {
+                    HomeBottomBar(
+                        navigationItems = BottomNavigation.entries,
+                        currentDestination = currentDestination,
+                        navigateTo = onBottomNavigate
+                    )
+                }
             }
         ) { contentPadding ->
             Surface(
