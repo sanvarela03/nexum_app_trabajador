@@ -150,28 +150,29 @@ private fun ConversationsScreenContent(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
-                title = {
-                    Column {
-                        Text("Mensajes")
-                        if (unreadCount > 0) {
-                            Text(
-                                text = "$unreadCount no leídos",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+            Column {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                    title = { Text("Mensajes") },
+                    actions = {
+                        IconButton(onClick = onUpdateUnread) {
+                            Icon(Icons.Default.Chat, "Actualizar")
                         }
                     }
-                },
-                actions = {
-                    IconButton(onClick = onUpdateUnread) {
-                        Icon(Icons.Default.Chat, "Actualizar")
-                    }
+                )
+                if (unreadCount > 0) {
+                    Text(
+                        text = "$unreadCount no leídos",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
                 }
-            )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
