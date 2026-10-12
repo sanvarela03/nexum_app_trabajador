@@ -126,13 +126,18 @@ fun ChatScreen(
         }
     }
 
+    val effectiveCurrentUserId = remember(currentUserId, viewModel.currentUserId) {
+        if (currentUserId.isNotBlank() && currentUserId != "null") currentUserId
+        else viewModel.currentUserId
+    }
+
     Nexum_trabajadorTheme {
         ChatScreenContent(
             messages = messages,
             profile = receiverProfile,
             uiState = uiState,
             connectionState = connectionState,
-            currentUserId = currentUserId,
+            currentUserId = effectiveCurrentUserId,
             receiverId = receiverId,
             isReceiverTyping = isReceiverTyping,
             onNavigateBack = onNavigateBack,

@@ -5,10 +5,14 @@ import android.content.res.Configuration
 import android.os.Build
 import android.view.Gravity
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -47,6 +51,7 @@ import com.example.nexum_trabajador.ui.navigation.graphs.Graph
 import com.example.nexum_trabajador.ui.navigation.graphs.homeGraph
 import com.example.nexum_trabajador.ui.navigation.rutes.DrawerRoutes
 import com.example.nexum_trabajador.ui.navigation.rutes.HomeRoutes
+import com.example.nexum_trabajador.common.capitalizeFirstLetter
 import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -67,10 +72,12 @@ fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     initialIntent: Intent? = null
 ) {
-    var currentUserId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var currentUserId by rememberSaveable { mutableStateOf<Long?>(homeViewModel.getUserIdSync()) }
 
     LaunchedEffect(Unit) {
-        currentUserId = homeViewModel.getUserId().firstOrNull()
+        if (currentUserId == null) {
+            currentUserId = homeViewModel.getUserId().firstOrNull()
+        }
     }
 
     val homeNavController = rememberNavController()
@@ -104,46 +111,49 @@ fun HomeScreen(
                 // Limpiar intent para no re-navegar en recomposiciones
                 initialIntent.removeExtra("type")
                 initialIntent.removeExtra("jobOfferUuid")
+            } else if (type == "CONTRACT_CREATED") {
+                homeNavController.navigate(HomeRoutes.AppointmentsScreen)
+                initialIntent.removeExtra("type")
+                initialIntent.removeExtra("contractId")
             }
         }
     }
 
-    HomeScreenContent(
-        navController = homeNavController,
-        drawerState = drawerState,
-        state = state,
-        onDrawerNavigate = { route ->
-            scope.launch { drawerState.close() }
-            homeNavController.navigate(route) {
-                popUpTo(route) { inclusive = true }
-            }
-        },
-        onBottomNavigate = { route ->
-            homeNavController.navigate(route) {
-                popUpTo(homeNavController.graph.findStartDestination().id) {
-                    saveState = true
+    currentUserId?.let { userId ->
+        HomeScreenContent(
+            navController = homeNavController,
+            drawerState = drawerState,
+            state = state,
+            onDrawerNavigate = { route ->
+                scope.launch { drawerState.close() }
+                homeNavController.navigate(route) {
+                    popUpTo(route) { inclusive = true }
                 }
-                restoreState = true
-                launchSingleTop = true
+            },
+            onBottomNavigate = { route ->
+                homeNavController.navigate(route) {
+                    popUpTo(homeNavController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    restoreState = true
+                    launchSingleTop = true
+                }
+            },
+            onNavButtonClicked = {
+                scope.launch { drawerState.apply { if (isClosed) open() else close() } }
+            },
+            onSignOut = {
+                homeViewModel.onEvent(HomeEvent.SignOutBtnClicked)
+            },
+            homeGraph = {
+                homeGraph(
+                    navController = homeNavController,
+                    homeViewModel = homeViewModel,
+                    currentUserId = userId
+                )
             }
-        },
-        onNavButtonClicked = {
-            scope.launch { drawerState.apply { if (isClosed) open() else close() } }
-//            scope.launch {
-//                if (drawerState.isClosed) drawerState.open() else drawerState.close()
-//            }
-        },
-        onSignOut = {
-            homeViewModel.onEvent(HomeEvent.SignOutBtnClicked)
-        },
-        homeGraph = {
-            homeGraph(
-                navController = homeNavController,
-                homeViewModel = homeViewModel,
-                currentUserId = currentUserId
-            )
-        }
-    )
+        )
+    }
 }
 
 @Composable
@@ -166,6 +176,7 @@ private fun HomeScreenContent(
 
     val mainScreens = listOf(
         HomeRoutes.CategoriesScreen,
+        HomeRoutes.AppointmentsScreen,
         HomeRoutes.RequestsScreen,
         HomeRoutes.WalletScreen,
         HomeRoutes.ConversationsScreen,
@@ -177,15 +188,23 @@ private fun HomeScreenContent(
         currentDestination?.hierarchy?.any { it.hasRoute(route::class) } == true
     } && isPortrait
 
+    val scope = rememberCoroutineScope()
+    BackHandler(enabled = drawerState.isOpen) {
+        scope.launch { drawerState.close() }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = showBars, // Deshabilitar gesto si no estamos en pantallas principales
+        gesturesEnabled = drawerState.isOpen, // Solo habilitado cuando está abierto para permitir cerrarlo (scrim / swipe hacia la izquierda) sin colisionar con el mapa al estar cerrado
         drawerContent = {
             ModalDrawerSheet(
                 modifier = Modifier.width(200.dp)
             ) {
                 NavigationDrawerHeader(
-                    value = "${state.worker?.firstName} ${state.worker?.lastName}",
+                    value = listOfNotNull(state.worker?.firstName, state.worker?.lastName)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" ")
+                        .ifBlank { null },
                     name = state.worker?.email,
                     profileImgURL = state.worker?.profilePictureUrl
                 )
@@ -197,11 +216,14 @@ private fun HomeScreenContent(
         }
     ) {
         Scaffold(
-            modifier = Modifier.background(Color.White),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentWindowInsets = WindowInsets.safeDrawing,
             topBar = {
                 if (showBars) {
                     AppToolBar(
-                        toolbarTitle = "Bienvenido a Nexum",
+                        toolbarTitle = state.worker?.firstName?.let { "Hola, ${it.capitalizeFirstLetter()}" } ?: "Bienvenido a Nexum",
                         signOutButtonClicked = onSignOut,
                         navButtonClicked = onNavButtonClicked
                     )
@@ -222,6 +244,7 @@ private fun HomeScreenContent(
                     .fillMaxSize()
                     .background(Color.White)
                     .padding(contentPadding)
+                    .consumeWindowInsets(contentPadding)
             ) {
                 NavHost(
                     modifier = Modifier.background(Color.White),

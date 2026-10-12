@@ -13,4 +13,5 @@ data class UpdateWorkerReq(
     val bio: String,
     val latitude: Double,
     val longitude: Double,
+    val isAvailable: Boolean? = null
 )

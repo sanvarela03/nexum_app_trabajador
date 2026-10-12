@@ -33,6 +33,7 @@ class HomeViewModel @Inject constructor(
     var getProducerJob: Job? = null
 
     fun getUserId() = tokenManager.getUserId()
+    fun getUserIdSync(): Long? = tokenManager.getUserIdSync()
 
     init {
         Log.d("HomeViewModel", " init ")
@@ -80,6 +81,55 @@ class HomeViewModel @Inject constructor(
             HomeEvent.DismissDialog -> {
                 state = state.copy(showDialog = false)
             }
+            is HomeEvent.ToggleAvailability -> {
+                toggleAvailability(event.isAvailable)
+            }
+        }
+    }
+
+    fun toggleAvailability(isAvailable: Boolean) {
+        val previousState = state.worker?.isAvailable ?: true
+        state = state.copy(
+            worker = state.worker?.copy(isAvailable = isAvailable),
+            isTogglingAvailability = true
+        )
+        viewModelScope.launch {
+            workerUseCases.setWorkerAvailability(isAvailable)
+                .catch { e ->
+                    Log.e("HomeViewModel", "Error actualizando disponibilidad: ${e.message}")
+                    state = state.copy(
+                        worker = state.worker?.copy(isAvailable = previousState),
+                        isTogglingAvailability = false,
+                        errorMessage = e.message ?: "Error al cambiar disponibilidad"
+                    )
+                }
+                .collect { response ->
+                    when (response) {
+                        is ApiResponse.Loading -> {
+                            state = state.copy(isTogglingAvailability = true)
+                        }
+                        is ApiResponse.Success -> {
+                            state = state.copy(
+                                isTogglingAvailability = false,
+                                worker = state.worker?.copy(isAvailable = response.data.isAvailable ?: isAvailable)
+                            )
+                        }
+                        is ApiResponse.Error -> {
+                            state = state.copy(
+                                worker = state.worker?.copy(isAvailable = previousState),
+                                isTogglingAvailability = false,
+                                errorMessage = response.errorMessage
+                            )
+                        }
+                        is ApiResponse.Failure -> {
+                            state = state.copy(
+                                worker = state.worker?.copy(isAvailable = previousState),
+                                isTogglingAvailability = false,
+                                errorMessage = response.errorMessage
+                            )
+                        }
+                    }
+                }
         }
     }
 

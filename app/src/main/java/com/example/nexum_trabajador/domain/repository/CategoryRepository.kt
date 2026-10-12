@@ -1,6 +1,9 @@
 package com.example.nexum_trabajador.domain.repository
 
-// Placeholder for CategoryRepository
+import com.example.nexum_trabajador.data.category.remote.payload.res.CategoryRes
+import com.example.nexum_trabajador.data.global_payload.res.ApiResponse
+import kotlinx.coroutines.flow.Flow
+
 interface CategoryRepository {
-    // TODO: Add category repository methods
+    fun getCategories(): Flow<ApiResponse<List<CategoryRes>>>
 }

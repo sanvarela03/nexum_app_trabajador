@@ -8,23 +8,25 @@ import com.example.nexum_trabajador.data.job_application.remote.payload.req.AddM
 import com.example.nexum_trabajador.data.job_application.remote.payload.req.AddTaskReq
 import com.example.nexum_trabajador.data.job_application.remote.payload.req.TimeRangeReq
 import com.example.nexum_trabajador.domain.model.JobApplicationDraft
+import com.example.nexum_trabajador.domain.model.ReusableProposal
 import com.example.nexum_trabajador.domain.use_cases.job_application.ApplyToJobOfferUseCase
 import com.example.nexum_trabajador.domain.use_cases.job_application.GetJobApplicationDraftUseCase
 import com.example.nexum_trabajador.domain.use_cases.job_application.SaveJobApplicationDraftUseCase
 import com.example.nexum_trabajador.domain.use_cases.job_application.DeleteJobApplicationDraftUseCase
+import com.example.nexum_trabajador.domain.use_cases.job_application.GetReusableProposalsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 data class JobApplicationState(
     val jobOfferId: Long = 0,
     val jobOfferUuid: String = "",
+    val jobOfferTitle: String = "",
     val scheduledDate: String = "",
     val estimatedTimeInMinutes: Double = 0.0,
     val laborCost: Double = 0.0,
@@ -33,6 +35,9 @@ data class JobApplicationState(
     val materials: List<AddMaterialReq> = emptyList(),
     val tasks: List<AddTaskReq> = emptyList(),
     val workSchedules: Map<String, List<TimeRangeReq>> = emptyMap(),
+    
+    val reusableProposals: List<ReusableProposal> = emptyList(),
+    val isLoadingProposals: Boolean = false,
     
     val isSubmitting: Boolean = false,
     val isSuccess: Boolean = false,
@@ -44,17 +49,46 @@ class JobApplicationViewModel @Inject constructor(
     private val applyToJobOfferUseCase: ApplyToJobOfferUseCase,
     private val getJobApplicationDraftUseCase: GetJobApplicationDraftUseCase,
     private val saveJobApplicationDraftUseCase: SaveJobApplicationDraftUseCase,
-    private val deleteJobApplicationDraftUseCase: DeleteJobApplicationDraftUseCase
+    private val deleteJobApplicationDraftUseCase: DeleteJobApplicationDraftUseCase,
+    private val getReusableProposalsUseCase: GetReusableProposalsUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(JobApplicationState())
     val state: StateFlow<JobApplicationState> = _state.asStateFlow()
 
-    fun init(jobOfferId: Long, jobOfferUuid: String) {
+    fun init(jobOfferId: Long, jobOfferUuid: String, jobOfferTitle: String = "") {
         if (_state.value.jobOfferId == 0L) {
-            _state.update { it.copy(jobOfferId = jobOfferId, jobOfferUuid = jobOfferUuid) }
+            _state.update {
+                it.copy(
+                    jobOfferId = jobOfferId,
+                    jobOfferUuid = jobOfferUuid,
+                    jobOfferTitle = jobOfferTitle
+                )
+            }
             loadDraft(jobOfferId)
+            loadReusableProposals()
         }
+    }
+
+    fun loadReusableProposals() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoadingProposals = true) }
+            val proposals = getReusableProposalsUseCase(_state.value.jobOfferId)
+            _state.update { it.copy(reusableProposals = proposals, isLoadingProposals = false) }
+        }
+    }
+
+    fun applyReusableProposal(proposal: ReusableProposal) {
+        _state.update {
+            it.copy(
+                proposalText = proposal.proposalText,
+                laborCost = proposal.laborCost,
+                workWarrantyInDays = proposal.workWarrantyInDays,
+                materials = proposal.materials,
+                tasks = proposal.tasks
+            )
+        }
+        saveCurrentDraft()
     }
 
     private fun loadDraft(jobOfferId: Long) {
@@ -79,6 +113,7 @@ class JobApplicationViewModel @Inject constructor(
 
                 _state.update {
                     it.copy(
+                        jobOfferTitle = draft.jobOfferTitle?.takeIf { t -> t.isNotBlank() } ?: it.jobOfferTitle,
                         proposalText = draft.proposalText,
                         laborCost = draft.laborCost,
                         workWarrantyInDays = draft.workWarrantyInDays,
@@ -98,12 +133,14 @@ class JobApplicationViewModel @Inject constructor(
             val draft = JobApplicationDraft(
                 jobOfferId = s.jobOfferId,
                 jobOfferUuid = s.jobOfferUuid,
+                jobOfferTitle = s.jobOfferTitle,
                 proposalText = s.proposalText,
                 laborCost = s.laborCost,
                 workWarrantyInDays = s.workWarrantyInDays,
                 materialsJson = Gson().toJson(s.materials),
                 tasksJson = Gson().toJson(s.tasks),
-                workSchedulesJson = Gson().toJson(s.workSchedules)
+                workSchedulesJson = Gson().toJson(s.workSchedules),
+                updatedAt = System.currentTimeMillis()
             )
             viewModelScope.launch {
                 saveJobApplicationDraftUseCase(draft)
@@ -203,7 +240,7 @@ class JobApplicationViewModel @Inject constructor(
         saveCurrentDraft()
     }
 
-    fun submitApplication() {
+    fun submitJobApplication() {
         val currentState = _state.value
         val req = AddJobApplicationReq(
             jobOfferId = currentState.jobOfferId,

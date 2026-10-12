@@ -24,7 +24,7 @@ import com.example.nexum_trabajador.data.profile.local.ProfileEntity
         JobApplicationDraftEntity::class,
         ProfileEntity::class
     ],
-    version = 5
+    version = 7
 )
 abstract class WorkerDb : RoomDatabase() {
     abstract val countryDao: CountryDao

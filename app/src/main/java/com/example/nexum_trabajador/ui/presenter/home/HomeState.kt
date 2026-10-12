@@ -23,5 +23,6 @@ data class HomeState(
     val dialogTitle: String = "",
     val dialogMessage: String = "",
     val isSuccess: Boolean = false,
-    val isUpdating: Boolean = false
+    val isUpdating: Boolean = false,
+    val isTogglingAvailability: Boolean = false
 )

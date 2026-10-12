@@ -265,9 +265,6 @@ private fun NewChatDialog(
                 } else {
                     LazyColumn {
                         items(profiles) { profile ->
-                            val fallbackName = "${profile.firstName.trim()} ${profile.lastName.trim()}".replace("\\s+".toRegex(), "+")
-                            val fallbackUrl = "https://ui-avatars.com/api/?name=$fallbackName&background=random&format=png"
-
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -275,19 +272,10 @@ private fun NewChatDialog(
                                     .padding(vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val validImgUrl = profile.imgUrl.takeIf {
-                                    it.isNotBlank() && it != "NaN" && it != "null" && it.startsWith("http") && !it.contains("localhost") && !it.contains("127.0.0.1")
-                                }
-
-                                GlideImage(
-                                    model = validImgUrl ?: fallbackUrl,
-                                    contentDescription = "Avatar",
-                                    modifier = Modifier.size(40.dp).clip(CircleShape),
-                                    contentScale = ContentScale.Crop,
-                                    requestBuilderTransform = {
-                                        it.signature(ObjectKey(profile.id))
-                                          .error(it.clone().load(fallbackUrl))
-                                    }
+                                com.example.nexum_trabajador.ui.components.UserAvatar(
+                                    imageUrl = profile.imgUrl,
+                                    name = "${profile.firstName} ${profile.lastName}",
+                                    size = 40.dp
                                 )
                                 Spacer(Modifier.width(12.dp))
                                 Text("${profile.firstName} ${profile.lastName}")
@@ -332,13 +320,6 @@ private fun ConversationItem(
     currentUserId: String,
     onClick: () -> Unit
 ) {
-    val fallbackUrl = remember(profile) {
-        val name = profile?.let { 
-            "${it.firstName.trim()} ${it.lastName.trim()}".replace("\\s+".toRegex(), "+")
-        } ?: "U"
-        "https://ui-avatars.com/api/?name=$name&background=random&format=png"
-    }
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -351,22 +332,10 @@ private fun ConversationItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val validImgUrl = profile?.imgUrl?.takeIf {
-                it.isNotBlank() && it != "NaN" && it != "null" && it.startsWith("http") && !it.contains("localhost") && !it.contains("127.0.0.1")
-            }
-
-            GlideImage(
-                model = validImgUrl ?: fallbackUrl,
-                contentDescription = "Avatar",
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop,
-                requestBuilderTransform = {
-                    // BUG FIX: Firma única por perfil para evitar conflictos de caché si comparten URL
-                    it.signature(ObjectKey(profile?.id ?: conversation.id))
-                      .error(it.clone().load(fallbackUrl))
-                }
+            com.example.nexum_trabajador.ui.components.UserAvatar(
+                imageUrl = profile?.imgUrl,
+                name = profile?.let { "${it.firstName} ${it.lastName}" },
+                size = 50.dp
             )
 
             Spacer(modifier = Modifier.width(12.dp))

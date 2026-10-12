@@ -25,8 +25,8 @@ class SignInViewModel @Inject constructor(
     private val authUseCases: AuthUseCases,
     private val validateSignInUseCase: ValidateSignInUseCase,
     private val saveSessionUseCase: SaveSessionUseCase,
-    private val saveLastUserEmailUseCase: SaveLastUserEmailUseCase,
     private val getFcmTokenUseCase: GetFcmTokenUseCase,
+    private val saveLastUserEmailUseCase: SaveLastUserEmailUseCase,
     private val getLastUserEmailUseCase: GetLastUserEmailUseCase
 ) : ViewModel() {
 
@@ -78,6 +78,7 @@ class SignInViewModel @Inject constructor(
             SignInEvent.ForgotPasswordButtonClicked -> {
                 // TODO: Navegar a pantalla de recuperar contraseña
             }
+
             else -> {}
         }
     }
@@ -99,6 +100,8 @@ class SignInViewModel @Inject constructor(
             val tokenResult = getFcmTokenUseCase()
             val fcmToken = tokenResult.getOrElse {
                 state = state.copy(
+                    isLoading = false,
+                    errorMessage = "No se pudo obtener el token del dispositivo.",
                     signInResponse = ApiResponse.Failure(
                         "No se pudo obtener el token del dispositivo.", -1
                     )
@@ -108,19 +111,44 @@ class SignInViewModel @Inject constructor(
 
             authUseCases.signIn(state.email, state.password, fcmToken)
                 .onStart {
-                    state = state.copy(signInResponse = ApiResponse.Loading)
+                    state = state.copy(isLoading = true, signInResponse = ApiResponse.Loading)
                 }
                 .catch { e ->
                     Log.e("SignInViewModel", "Sign-in flow failed", e)
-                    val apiResponse =
-                        ApiResponse.Failure(e.message ?: "Ocurrió un error inesperado", -1)
-                    state = state.copy(signInResponse = apiResponse)
+                    val errorMsg = e.message ?: "Ocurrió un error inesperado"
+                    val apiResponse = ApiResponse.Failure(errorMsg, -1)
+                    state = state.copy(
+                        isLoading = false,
+                        errorMessage = errorMsg,
+                        signInResponse = apiResponse
+                    )
                 }
                 .collect { response ->
-                    if (response is ApiResponse.Success) {
-                        handleSuccessfulSignIn(response)
-                    } else {
-                        state = state.copy(signInResponse = response)
+                    when (response) {
+                        is ApiResponse.Error -> {
+                            state = state.copy(
+                                isLoading = false,
+                                errorMessage = response.errorMessage,
+                                signInResponse = response
+                            )
+                        }
+
+                        is ApiResponse.Failure -> {
+                            state = state.copy(
+                                isLoading = false,
+                                errorMessage = response.errorMessage,
+                                signInResponse = response
+                            )
+                        }
+
+                        ApiResponse.Loading -> {
+                            state = state.copy(isLoading = true)
+                        }
+
+                        is ApiResponse.Success -> {
+                            state = state.copy(isLoading = false)
+                            handleSuccessfulSignIn(response)
+                        }
                     }
                 }
         }
@@ -130,13 +158,14 @@ class SignInViewModel @Inject constructor(
         val token = response.data?.token
         if (token.isNullOrBlank()) {
             state = state.copy(
+                errorMessage = "Login exitoso pero no se recibió token.",
                 signInResponse = ApiResponse.Failure(
                     "Login exitoso pero no se recibió token.", -1
                 )
             )
         } else {
             saveSessionUseCase(response.data)
-            saveLastUserEmailUseCase(response.data.email)
+            saveLastUserEmailUseCase(state.email)
             state = state.copy(signInResponse = response)
         }
     }

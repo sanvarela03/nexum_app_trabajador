@@ -13,7 +13,7 @@ import com.example.nexum_trabajador.data.global_payload.res.ApiResponse
 import com.example.nexum_trabajador.data.mapper.SignUpMapper
 import com.example.nexum_trabajador.domain.use_cases.auth.AuthUseCases
 import com.example.nexum_trabajador.domain.use_cases.common.GetFcmTokenUseCase
-import com.example.nexum_trabajador.domain.use_cases.common.MediaManagementUseCase
+import com.example.nexum_trabajador.common.MediaUploadHandler
 import com.example.nexum_trabajador.domain.use_cases.country.CountryUseCases
 import com.example.nexum_trabajador.domain.use_cases.market_location.MarketLocationUseCases
 import com.example.nexum_trabajador.domain.use_cases.sign_up.RestoreSignUpDraftUseCase
@@ -33,12 +33,16 @@ class SignUpViewModel @Inject constructor(
     private val authUseCases: AuthUseCases,
     private val countryUseCases: CountryUseCases,
     private val marketLocationUseCases: MarketLocationUseCases,
-    private val mediaManagementUseCase: MediaManagementUseCase,
+    private val mediaUploadHandler: MediaUploadHandler,
     private val restoreSignUpDraftUseCase: RestoreSignUpDraftUseCase,
     private val getFcmTokenUseCase: GetFcmTokenUseCase,
     private val validateSignUpUseCase: ValidateSignUpUseCase,
     private val signUpMapper: SignUpMapper
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "SignUpViewModel"
+    }
 
     var state by mutableStateOf(SignUpState())
         private set
@@ -66,10 +70,7 @@ class SignUpViewModel @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun onEvent(event: SignUpEvent) {
-        // Reducer: Actualiza el estado de forma atómica
         state = reduceState(event)
-
-        // Side Effects: Maneja lógica asíncrona o de navegación
         handleEventSideEffects(event)
     }
 
@@ -95,6 +96,7 @@ class SignUpViewModel @Inject constructor(
                 val phoneCodeResult = validateSignUpUseCase.executePhoneCode(event.country)
                 val phoneResult = validateSignUpUseCase.executeCellphone(state.phone, event.country)
                 state.copy(
+                    phoneCode = event.country?.phoneCode ?: "",
                     selectedCountry = event.country,
                     phoneCodeError = !phoneCodeResult.isValid,
                     phoneError = !phoneResult.isValid
@@ -102,85 +104,32 @@ class SignUpViewModel @Inject constructor(
             }
 
             is SignUpEvent.CellphoneChanged -> {
-                val result =
-                    validateSignUpUseCase.executeCellphone(event.phone, state.selectedCountry)
+                val result = validateSignUpUseCase.executeCellphone(event.phone, state.selectedCountry)
                 state.copy(phone = event.phone, phoneError = !result.isValid)
             }
 
-            is SignUpEvent.BirthDateDayChanged -> {
-                val result = validateSignUpUseCase.executeBirthDate(
-                    event.birthDateDay,
-                    state.birthDateMonth,
-                    state.birthDateYear
-                )
-                state.copy(birthDateDay = event.birthDateDay, birthDateError = !result.isValid)
-            }
-
-            is SignUpEvent.BirthDateMonthChanged -> {
-                val result = validateSignUpUseCase.executeBirthDate(
-                    state.birthDateDay,
-                    event.birthDateMonth,
-                    state.birthDateYear
-                )
-                state.copy(birthDateMonth = event.birthDateMonth, birthDateError = !result.isValid)
-            }
-
-            is SignUpEvent.BirthDateYearChanged -> {
-                val result = validateSignUpUseCase.executeBirthDate(
-                    state.birthDateDay,
-                    state.birthDateMonth,
-                    event.birthDateYear
-                )
-                state.copy(birthDateYear = event.birthDateYear, birthDateError = !result.isValid)
-            }
+            is SignUpEvent.BirthDateDayChanged -> state.copy(birthDateDay = event.birthDateDay)
+            is SignUpEvent.BirthDateMonthChanged -> state.copy(birthDateMonth = event.birthDateMonth)
+            is SignUpEvent.BirthDateYearChanged -> state.copy(birthDateYear = event.birthDateYear)
 
             is SignUpEvent.CityChanged -> {
                 val result = validateSignUpUseCase.executeCity(event.marketLocation)
-                state.copy(
-                    selectedMarketLocation = event.marketLocation,
-                    cityError = !result.isValid
-                )
+                state.copy(selectedMarketLocation = event.marketLocation, cityError = !result.isValid)
             }
 
             is SignUpEvent.DocumentNumberChanged -> {
                 val result = validateSignUpUseCase.executeDocumentNumber(event.documentNumber)
-                state.copy(
-                    documentNumber = event.documentNumber,
-                    documentNumberError = !result.isValid
-                )
+                state.copy(documentNumber = event.documentNumber, documentNumberError = !result.isValid)
             }
 
-            is SignUpEvent.PasswordChanged -> {
-                val passwordResult = validateSignUpUseCase.executePassword(event.password)
-                val confirmPasswordResult = validateSignUpUseCase.executeConfirmPassword(
-                    event.password,
-                    state.confirmPassword
-                )
-                state.copy(
-                    password = event.password,
-                    passwordError = !passwordResult.isValid,
-                    confirmPasswordError = !confirmPasswordResult.isValid
-                )
+            is SignUpEvent.FrontDocumentUriChanged -> {
+                state.copy(frontDocumentUri = event.frontDocumentUri)
             }
 
-            is SignUpEvent.ConfirmPasswordChanged -> {
-                val result = validateSignUpUseCase.executeConfirmPassword(
-                    state.password,
-                    event.confirmPassword
-                )
-                state.copy(
-                    confirmPassword = event.confirmPassword,
-                    confirmPasswordError = !result.isValid
-                )
+            is SignUpEvent.BackDocumentUriChanged -> {
+                state.copy(backDocumentUri = event.backDocumentUri)
             }
 
-            // Eventos que no requieren validación en este punto, solo actualizan el estado
-            is SignUpEvent.BackDocumentUriChanged -> state.copy(backDocumentUri = event.backDocumentUri)
-            is SignUpEvent.FrontDocumentUriChanged -> state.copy(frontDocumentUri = event.frontDocumentUri)
-            is SignUpEvent.ProfilePictureUriChanged -> state.copy(profilePictureUri = event.profilePictureUri)
-            is SignUpEvent.LoadCountries -> state.copy(isLoadingCountries = true)
-
-            // Estos eventos son resultados de side effects, ahora validan al actualizar
             is SignUpEvent.FrontDocumentUrlChanged -> {
                 val result = validateSignUpUseCase.executeDocumentUrl(event.frontDocumentUrl)
                 state.copy(
@@ -197,6 +146,14 @@ class SignUpViewModel @Inject constructor(
                 )
             }
 
+            is SignUpEvent.ProfilePictureUriChanged -> {
+                val result = validateSignUpUseCase.executeProfilePictureUri(event.profilePictureUri)
+                state.copy(
+                    profilePictureUri = event.profilePictureUri,
+                    profilePictureUriError = !result.isValid
+                )
+            }
+
             is SignUpEvent.ProfilePictureUrlChanged -> {
                 val result = validateSignUpUseCase.executeProfilePictureUrl(event.profilePictureUrl)
                 state.copy(
@@ -205,25 +162,30 @@ class SignUpViewModel @Inject constructor(
                 )
             }
 
-            // Eventos de UI/Diálogos
-            SignUpEvent.ConfirmTosDialog -> state.copy(showTosDialog = false, tosAccepted = true)
-            SignUpEvent.DismissTosDialog -> state.copy(showTosDialog = false, tosAccepted = false)
-            SignUpEvent.ConfirmPolicyDialog -> state.copy(
-                showPolicyDialog = false,
-                policyAccepted = true
-            )
+            is SignUpEvent.PasswordChanged -> {
+                val result = validateSignUpUseCase.executePassword(event.password)
+                state.copy(password = event.password, passwordError = !result.isValid)
+            }
 
-            SignUpEvent.DismissPolicyDialog -> state.copy(
-                showPolicyDialog = false,
-                policyAccepted = false
-            )
+            is SignUpEvent.ConfirmPasswordChanged -> {
+                val result = validateSignUpUseCase.executeConfirmPassword(event.confirmPassword, state.password)
+                state.copy(confirmPassword = event.confirmPassword, confirmPasswordError = !result.isValid)
+            }
+
+            SignUpEvent.ShowPolicyDialog -> state.copy(showPolicyDialog = true)
+            SignUpEvent.DismissPolicyDialog -> state.copy(showPolicyDialog = false, policyAccepted = false)
+            SignUpEvent.ConfirmPolicyDialog -> state.copy(showPolicyDialog = false, policyAccepted = true)
+
+            SignUpEvent.ShowTosDialog -> state.copy(showTosDialog = true)
+            SignUpEvent.DismissTosDialog -> state.copy(showTosDialog = false, tosAccepted = false)
+            SignUpEvent.ConfirmTosDialog -> state.copy(showTosDialog = false, tosAccepted = true)
 
             SignUpEvent.DismissSignUpSuccessDialog -> state.copy(isSignedUp = false)
-            SignUpEvent.ShowPolicyDialog -> state.copy(showPolicyDialog = true)
-            SignUpEvent.ShowTosDialog -> state.copy(showTosDialog = true)
 
-            // Eventos que solo disparan side-effects
-            SignUpEvent.ContinueButtonClicked, SignUpEvent.RegisterButtonClicked -> state
+            SignUpEvent.ContinueButtonClicked -> state
+            SignUpEvent.RegisterButtonClicked -> state
+            is SignUpEvent.LoadCountries -> state
+            is SignUpEvent.LoadMarketLocations -> state
         }
     }
 
@@ -262,8 +224,8 @@ class SignUpViewModel @Inject constructor(
 
             SignUpEvent.RegisterButtonClicked -> signUp()
             is SignUpEvent.LoadCountries -> refreshCountries(event.fetchFromRemote)
-            else -> { /* Sin efectos secundarios para otros eventos */
-            }
+            is SignUpEvent.LoadMarketLocations -> refreshMarketLocations(event.fetchFromRemote)
+            else -> {}
         }
     }
 
@@ -274,17 +236,14 @@ class SignUpViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onDelete: () -> Unit
     ) {
-        viewModelScope.launch {
-            if (newUri == null || newUri == Uri.EMPTY) {
-                mediaManagementUseCase.deleteImage(currentUrl, storageKey)
-                    .onSuccess { onDelete() }
-                    .onFailure { Log.e("SignUpViewModel", "Error deleting image", it) }
-            } else {
-                mediaManagementUseCase.uploadAndSaveImage(newUri, currentUrl, storageKey)
-                    .onSuccess(onSuccess)
-                    .onFailure { Log.e("SignUpViewModel", "Error uploading image", it) }
-            }
-        }
+        mediaUploadHandler.handleMediaChange(
+            scope = viewModelScope,
+            newUri = newUri,
+            currentUrl = currentUrl,
+            storageKey = storageKey,
+            onSuccess = onSuccess,
+            onDelete = onDelete
+        )
     }
 
     private fun refreshCountries(fetchFromRemote: Boolean = false) {
@@ -329,15 +288,15 @@ class SignUpViewModel @Inject constructor(
             else -> "Ocurrió un error: ${exception.message}"
         }
         state = state.copy(isLoadingCountries = false, countriesError = errorMessage)
-        Log.e("SignUpViewModel", "Network Error", exception)
+        Log.e(TAG, "Network Error", exception)
     }
 
     private fun refreshMarketLocations(fetchFromRemote: Boolean = false) {
         viewModelScope.launch {
             marketLocationUseCases.updateMarketLocations(fetchFromRemote).catch {
-                Log.d("SignUpViewModel", "updateMarketLocations Error: $it");
+                Log.d(TAG, "updateMarketLocations Error: $it")
             }.collect {
-                Log.d("SignUpViewModel", "updateMarketLocations: $it");
+                Log.d(TAG, "updateMarketLocations: $it")
             }
         }
     }
@@ -346,7 +305,7 @@ class SignUpViewModel @Inject constructor(
         viewModelScope.launch {
             marketLocationUseCases.observeMarketLocations()
                 .distinctUntilChanged()
-                .catch { Log.e("SignUpViewModel", "observeMarketLocations Error: $it"); }
+                .catch { Log.e(TAG, "observeMarketLocations Error: $it") }
                 .collect { state = state.copy(marketLocations = it) }
         }
     }
@@ -362,39 +321,62 @@ class SignUpViewModel @Inject constructor(
     private fun signUp() {
         signUpJob?.cancel()
         signUpJob = viewModelScope.launch {
-            val tokenResult = getFcmTokenUseCase()
-            val tkn = tokenResult.getOrElse {
-                state = state.copy(
-                    signUpError = true,
-                    errorMessage = "No se pudo obtener el token de notificación."
-                )
-                return@launch
-            }
+            try {
+                state = state.copy(isSigningUp = true, signUpError = false, errorMessage = "")
 
-            val username = signUpMapper.generateUsername(state.name, state.lastName)
-            state = state.copy(username = username)
+                val tokenResult = getFcmTokenUseCase()
+                val tkn = tokenResult.getOrElse {
+                    state = state.copy(
+                        isSigningUp = false,
+                        signUpError = true,
+                        errorMessage = "No se pudo obtener el token de notificación."
+                    )
+                    return@launch
+                }
 
-            val signUpReq = signUpMapper.mapStateToRequest(state, tkn, username)
+                val username = signUpMapper.generateUsername(state.name, state.lastName)
+                state = state.copy(username = username)
 
-            Log.d("SignUpRequest", signUpReq.toString())
-            authUseCases.signUp(signUpReq).collect { response ->
-                when (response) {
-                    is ApiResponse.Success -> {
-                        state =
-                            state.copy(isSignedUp = true, signUpResponse = response.data.message)
-                    }
+                val signUpReq = signUpMapper.mapStateToRequest(state, tkn, username)
 
-                    is ApiResponse.Error -> {
-                        state = state.copy(signUpError = true, errorMessage = response.errorMessage)
-                    }
+                Log.d(TAG, "SignUpRequest: $signUpReq")
 
-                    is ApiResponse.Failure -> {
-                        state = state.copy(signUpError = true, errorMessage = response.errorMessage)
-                    }
+                authUseCases.signUp(signUpReq).collect { response ->
+                    when (response) {
+                        is ApiResponse.Success -> {
+                            state = state.copy(
+                                isSigningUp = false,
+                                isSignedUp = true,
+                                signUpResponse = response.data.message
+                            )
+                        }
 
-                    is ApiResponse.Loading -> { /* Opcional: mostrar un spinner global */
+                        is ApiResponse.Error -> {
+                            state = state.copy(
+                                isSigningUp = false,
+                                signUpError = true,
+                                errorMessage = response.errorMessage
+                            )
+                        }
+
+                        is ApiResponse.Failure -> {
+                            state = state.copy(
+                                isSigningUp = false,
+                                signUpError = true,
+                                errorMessage = response.errorMessage
+                            )
+                        }
+
+                        is ApiResponse.Loading -> {}
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error durante signUp", e)
+                state = state.copy(
+                    isSigningUp = false,
+                    signUpError = true,
+                    errorMessage = "Ocurrió un error inesperado: ${e.message}"
+                )
             }
         }
     }
@@ -402,6 +384,6 @@ class SignUpViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         signUpJob?.cancel()
-        Log.d("Cleared", "onCleared")
+        Log.d(TAG, "onCleared")
     }
 }

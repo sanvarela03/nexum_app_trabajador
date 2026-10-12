@@ -125,4 +125,32 @@ object RepositoryModule {
         draftDao: com.example.nexum_trabajador.data.job_application.local.JobApplicationDraftDao
     ): JobApplicationRepository = 
         com.example.nexum_trabajador.data.job_application.repository.JobApplicationRepositoryImpl(api, draftDao)
+
+    @Provides
+    @Singleton
+    fun provideContractRepository(
+        remoteDataSource: com.example.nexum_trabajador.data.contract.remote.ContractRemoteDataSource
+    ): com.example.nexum_trabajador.domain.repository.ContractRepository =
+        com.example.nexum_trabajador.data.contract.repository.ContractRepositoryImpl(remoteDataSource)
+
+    @Provides
+    @Singleton
+    fun provideUserRepository(
+        userApi: com.example.nexum_trabajador.data.user.remote.UserApi
+    ): com.example.nexum_trabajador.domain.repository.UserRepository =
+        com.example.nexum_trabajador.data.user.UserRepositoryImpl(userApi)
+
+    @Provides
+    @Singleton
+    fun provideCategoryRepository(
+        remoteDataSource: com.example.nexum_trabajador.data.category.remote.CategoryRemoteDataSource
+    ): com.example.nexum_trabajador.domain.repository.CategoryRepository =
+        com.example.nexum_trabajador.data.category.CategoryRepositoryImpl(remoteDataSource)
+
+    @Provides
+    @Singleton
+    fun provideJobOccupationRepository(
+        remoteDataSource: com.example.nexum_trabajador.data.job_occupation.remote.JobOccupationRemoteDataSource
+    ): com.example.nexum_trabajador.domain.repository.JobOccupationRepository =
+        com.example.nexum_trabajador.data.job_occupation.repository.JobOccupationRepositoryImpl(remoteDataSource)
 }

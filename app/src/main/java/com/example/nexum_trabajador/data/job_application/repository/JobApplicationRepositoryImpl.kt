@@ -2,6 +2,7 @@ package com.example.nexum_trabajador.data.job_application.repository
 
 import com.example.nexum_trabajador.data.job_application.remote.JobApplicationApi
 import com.example.nexum_trabajador.data.job_application.remote.payload.req.AddJobApplicationReq
+import com.example.nexum_trabajador.data.job_application.remote.payload.res.JobApplicationRes
 import com.example.nexum_trabajador.data.job_application.local.JobApplicationDraftDao
 import com.example.nexum_trabajador.data.job_application.local.JobApplicationDraftEntity
 import com.example.nexum_trabajador.domain.repository.JobApplicationRepository
@@ -26,17 +27,49 @@ class JobApplicationRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getWorkerJobApplications(): Result<List<JobApplicationRes>> {
+        return try {
+            val response = api.getWorkerJobApplications()
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyList())
+            } else {
+                Result.failure(Exception(response.message() ?: "Error al obtener aplicaciones previas"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getDraft(jobOfferId: Long): JobApplicationDraft? {
         return draftDao.getDraft(jobOfferId)?.let { entity ->
             JobApplicationDraft(
                 jobOfferId = entity.jobOfferId,
                 jobOfferUuid = entity.jobOfferUuid,
+                jobOfferTitle = entity.jobOfferTitle,
                 proposalText = entity.proposalText,
                 laborCost = entity.laborCost,
                 workWarrantyInDays = entity.workWarrantyInDays,
                 materialsJson = entity.materialsJson,
                 tasksJson = entity.tasksJson,
-                workSchedulesJson = entity.workSchedulesJson
+                workSchedulesJson = entity.workSchedulesJson,
+                updatedAt = entity.updatedAt
+            )
+        }
+    }
+
+    override suspend fun getAllOtherDrafts(currentJobOfferId: Long): List<JobApplicationDraft> {
+        return draftDao.getAllOtherDrafts(currentJobOfferId).map { entity ->
+            JobApplicationDraft(
+                jobOfferId = entity.jobOfferId,
+                jobOfferUuid = entity.jobOfferUuid,
+                jobOfferTitle = entity.jobOfferTitle,
+                proposalText = entity.proposalText,
+                laborCost = entity.laborCost,
+                workWarrantyInDays = entity.workWarrantyInDays,
+                materialsJson = entity.materialsJson,
+                tasksJson = entity.tasksJson,
+                workSchedulesJson = entity.workSchedulesJson,
+                updatedAt = entity.updatedAt
             )
         }
     }
@@ -45,12 +78,14 @@ class JobApplicationRepositoryImpl @Inject constructor(
         val entity = JobApplicationDraftEntity(
             jobOfferId = draft.jobOfferId,
             jobOfferUuid = draft.jobOfferUuid,
+            jobOfferTitle = draft.jobOfferTitle,
             proposalText = draft.proposalText,
             laborCost = draft.laborCost,
             workWarrantyInDays = draft.workWarrantyInDays,
             materialsJson = draft.materialsJson,
             tasksJson = draft.tasksJson,
-            workSchedulesJson = draft.workSchedulesJson
+            workSchedulesJson = draft.workSchedulesJson,
+            updatedAt = draft.updatedAt
         )
         draftDao.saveDraft(entity)
     }

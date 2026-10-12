@@ -7,6 +7,7 @@ import javax.inject.Singleton
 data class WorkerUseCases @Inject constructor(
     val updateWorker: UpdateWorker,
     val observeWorker: ObserveWorker,
-    val updateWorkerDetails: UpdateWorkerDetails
+    val updateWorkerDetails: UpdateWorkerDetails,
+    val setWorkerAvailability: SetWorkerAvailabilityUseCase
 )
 

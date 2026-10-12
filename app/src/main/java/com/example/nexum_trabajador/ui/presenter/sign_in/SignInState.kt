@@ -8,12 +8,15 @@ data class SignInState(
     val password: String = "",
     val emailError: Boolean = false,
     val passwordError: Boolean = false,
-    val signInResponse: ApiResponse<SignInRes>? = null
+    val signInResponse: ApiResponse<SignInRes>? = null,
+    val isLoading: Boolean = false,
+    var errorMessage: String = "",
+    val isResponseError: Boolean = false
 ) {
     val isButtonEnabled: Boolean
         get() = email.isNotBlank() &&
                 password.isNotBlank() &&
-                !emailError &&
-                !passwordError &&
-                signInResponse !is ApiResponse.Loading
+                emailError.not() &&
+                passwordError.not() &&
+                isLoading.not()
 }

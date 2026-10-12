@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 class ValidateSignInUseCase @Inject constructor() {
     fun executeEmail(email: String): ValidationResult {
-        return SignInValidator.validateEmail(email)
+        return SignInValidator.validateEmailOrUsername(email)
     }
 
     fun executePassword(password: String): ValidationResult {

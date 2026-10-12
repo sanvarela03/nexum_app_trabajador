@@ -6,7 +6,9 @@ import com.example.nexum_trabajador.data.worker.remote.payload.res.WorkerRes
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.PUT
+import retrofit2.http.Query
 
 /**
  * @author Santiago Varela Daza
@@ -21,4 +23,7 @@ interface WorkerApi {
 
     @PUT("/api/v1/workers")
     suspend fun updateWorkerDetails(@Body req: UpdateWorkerReq): Response<MessageRes>
+
+    @PATCH("/api/v1/workers/availability")
+    suspend fun setAvailability(@Query("available") available: Boolean): Response<WorkerRes>
 }

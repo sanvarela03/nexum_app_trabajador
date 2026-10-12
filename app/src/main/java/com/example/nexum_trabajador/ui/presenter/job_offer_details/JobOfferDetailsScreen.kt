@@ -70,7 +70,7 @@ fun JobOfferDetailsScreen(
     uuid: String,
     viewModel: JobOfferDetailsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToApplication: (Long, String) -> Unit
+    onNavigateToApplication: (Long, String, String) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -111,7 +111,7 @@ fun JobOfferDetailsScreen(
                 JobOfferDetailsContent(
                     details = details,
                     modifier = Modifier.padding(paddingValues),
-                    onApply = { onNavigateToApplication(details.id, details.uuid) },
+                    onApply = { onNavigateToApplication(details.id, details.uuid, details.title) },
                     onDiscard = {
                         viewModel.discardDraft(details.id)
                         onNavigateBack()

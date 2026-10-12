@@ -8,14 +8,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.example.nexum_trabajador.ui.navigation.rutes.DrawerRoutes
 import com.example.nexum_trabajador.ui.navigation.rutes.HomeRoutes
+import com.example.nexum_trabajador.ui.presenter.appointments.AppointmentsScreen
 import com.example.nexum_trabajador.ui.presenter.chat.ChatScreen
 import com.example.nexum_trabajador.ui.presenter.conversations.ConversationsScreen
 import com.example.nexum_trabajador.ui.presenter.home.HomeViewModel
 import com.example.nexum_trabajador.ui.presenter.landing.LandingScreen
 import com.example.nexum_trabajador.ui.presenter.notifications.NotificationsScreen
+import com.example.nexum_trabajador.ui.presenter.occupations.OccupationsScreen
 import com.example.nexum_trabajador.ui.presenter.profile.ProfileScreen
 import com.example.nexum_trabajador.ui.presenter.work_location.WorkLocationScreen
 import androidx.navigation.toRoute
+import com.example.nexum_trabajador.ui.presenter.job_offer_details.JobOfferDetailsScreen
 
 //import com.example.nexum_trabajador.ui.navigation.rutes.JobOfferRoutes
 //import com.example.nexum_trabajador.ui.presenter.categories.CategoriesScreen
@@ -41,9 +44,13 @@ fun NavGraphBuilder.homeGraph(
 ) {
     navigation<Graph.HomeGraph>(startDestination = HomeRoutes.CategoriesScreen) {
         composable<HomeRoutes.CategoriesScreen> {
-            LandingScreen(
-                homeViewModel = homeViewModel
+            WorkLocationScreen(
+                homeViewModel = homeViewModel,
+                onBack = null
             )
+        }
+        composable<HomeRoutes.AppointmentsScreen> {
+            AppointmentsScreen()
         }
         composable<HomeRoutes.RequestsScreen> {
 
@@ -89,6 +96,14 @@ fun NavGraphBuilder.homeGraph(
             ProfileScreen(homeViewModel = homeViewModel)
         }
 
+        composable<DrawerRoutes.OccupationsScreen> {
+            OccupationsScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
         composable<DrawerRoutes.SettingsScreen> {
 
         }
@@ -102,11 +117,17 @@ fun NavGraphBuilder.homeGraph(
         }
         composable<HomeRoutes.JobOfferDetailsScreen> { backStackEntry ->
             val args = backStackEntry.toRoute<HomeRoutes.JobOfferDetailsScreen>()
-            com.example.nexum_trabajador.ui.presenter.job_offer_details.JobOfferDetailsScreen(
+            JobOfferDetailsScreen(
                 uuid = args.uuid,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToApplication = { jobOfferId, jobOfferUuid ->
-                    navController.navigate(HomeRoutes.JobApplicationGraph(jobOfferId = jobOfferId, jobOfferUuid = jobOfferUuid))
+                onNavigateToApplication = { jobOfferId, jobOfferUuid, jobOfferTitle ->
+                    navController.navigate(
+                        HomeRoutes.JobApplicationGraph(
+                            jobOfferId = jobOfferId,
+                            jobOfferUuid = jobOfferUuid,
+                            jobOfferTitle = jobOfferTitle
+                        )
+                    )
                 }
             )
         }

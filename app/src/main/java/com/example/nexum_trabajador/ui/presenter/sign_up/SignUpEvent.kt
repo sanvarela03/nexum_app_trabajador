@@ -37,7 +37,7 @@ sealed class SignUpEvent {
     data class ProfilePictureUrlChanged(val profilePictureUrl: String) : SignUpEvent()
 
     data class LoadCountries(val fetchFromRemote: Boolean = false) : SignUpEvent()
-
+    data class LoadMarketLocations(val fetchFromRemote: Boolean = false) : SignUpEvent()
 
     object ShowPolicyDialog : SignUpEvent()
     object ShowTosDialog : SignUpEvent()
@@ -47,7 +47,6 @@ sealed class SignUpEvent {
     object DismissTosDialog : SignUpEvent()
     object ConfirmTosDialog : SignUpEvent()
     object DismissSignUpSuccessDialog : SignUpEvent()
-
 
     data class CityChanged(val marketLocation: MarketLocation?) : SignUpEvent()
     data class DocumentNumberChanged(val documentNumber: String) : SignUpEvent()

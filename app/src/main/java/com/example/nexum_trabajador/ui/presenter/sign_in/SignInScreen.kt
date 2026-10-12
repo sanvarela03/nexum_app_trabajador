@@ -1,6 +1,8 @@
 package com.example.nexum_trabajador.ui.presenter.sign_in
 
 import android.util.Log
+import android.view.Gravity
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,9 +20,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -49,14 +53,16 @@ fun SignInScreen(
     val state = viewModel.state
     if (username != null) {
         Log.d("SignInScreen", "Username: $username")
-        viewModel.onEvent(SignInEvent.UsernameChanged(username))
+        LaunchedEffect(Unit) {
+            viewModel.onEvent(SignInEvent.UsernameChanged(username))
+        }
     }
 
     Nexum_trabajadorTheme {
         SignInScreenContent(
             state = state,
             emailChanged = {
-                viewModel.onEvent(SignInEvent.UsernameChanged(it))
+                viewModel.onEvent(SignInEvent.UsernameChanged(it.trim()))
             },
             passwordChanged = {
                 viewModel.onEvent(SignInEvent.PasswordChanged(it))
@@ -71,6 +77,16 @@ fun SignInScreen(
                 go(AuthRoutes.SignUpScreen)
             }
         )
+    }
+
+    val context = LocalContext.current
+    LaunchedEffect(state.errorMessage) {
+        if (state.errorMessage.isNotEmpty()) {
+            val toast = Toast.makeText(context, "Error: ${state.errorMessage}", Toast.LENGTH_SHORT)
+            toast.setGravity(Gravity.BOTTOM, 0, 300)
+            toast.show()
+            state.errorMessage = ""
+        }
     }
 }
 
@@ -107,15 +123,14 @@ private fun SignInScreenContent(
                     fontSize = 20.sp,
                     textAlign = TextAlign.Center,
                 )
-                Text("Ingrese su correo para iniciar sesión", fontSize = 18.sp)
+                Text("Ingrese su correo o usuario para iniciar sesión", fontSize = 18.sp)
 
                 MyTextFieldComponent(
-                    labelValue = "Ingrese su correo",
+                    labelValue = "Ingrese su correo o usuario",
                     textValue = state.email,
                     leadingIcon = Icons.Default.Email,
                     onTextSelected = {
                         emailChanged(it)
-//                    viewModel.onEvent(SignInEvent.UsernameChanged(it))
                     },
                     errorStatus = state.emailError,
                 )
@@ -131,31 +146,28 @@ private fun SignInScreenContent(
                 ForgotPasswordText(onForgotPasswordClicked)
                 ButtonComponent(
                     value = "Ingresar",
+                    isLoading = state.isLoading,
                     isEnabled = state.isButtonEnabled,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         disabledContainerColor = MaterialTheme.colorScheme.surface,
                         contentColor = Color.White,
                         disabledContentColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
-                    onLoginButtonClicked()
-//                viewModel.onEvent(SignInEvent.LoginButtonClicked)
-                }
+                    ),
+                    onButtonClicked = {
+                        onLoginButtonClicked()
+                    }
+                )
                 DividerTextComponent()
-
 
                 SignUpText(go)
             }
         }
-
     }
 }
 
-
 @Composable
 private fun ForgotPasswordText(
-//    viewModel: SignInViewModel,
     onForgotPasswordClicked: () -> Unit = {}
 ) {
     ClickableText(
@@ -171,7 +183,6 @@ private fun ForgotPasswordText(
             .padding(horizontal = 5.dp),
         onClick = {
             onForgotPasswordClicked()
-//            viewModel.onEvent(SignInEvent.ForgotPasswordButtonClicked)
         }
     )
 }
@@ -203,8 +214,6 @@ private fun SignUpText(go: () -> Unit) {
             annotatedString.getStringAnnotations(offset, offset).firstOrNull()
                 ?.also { span ->
                     if ((span.item == signUpTxt)) {
-                        //TODO Navegar al registro
-//                        go(AuthRoutes.SignUpScreen)
                         go()
                     }
                 }

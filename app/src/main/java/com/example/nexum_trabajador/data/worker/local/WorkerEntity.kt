@@ -32,5 +32,6 @@ data class WorkerEntity(
     val lastLogin: String,
     val profilePictureUrl: String?,
     val latitude: Double?,
-    val longitude: Double?
+    val longitude: Double?,
+    val isAvailable: Boolean = true
 )

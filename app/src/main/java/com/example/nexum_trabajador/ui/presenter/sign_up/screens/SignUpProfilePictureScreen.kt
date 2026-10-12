@@ -2,7 +2,6 @@ package com.example.nexum_trabajador.ui.presenter.sign_up.screens
 
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -16,9 +15,12 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +39,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,31 +54,36 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.nexum_trabajador.R
 import com.example.nexum_trabajador.common.capitalizeFirstLetter
 import com.example.nexum_trabajador.ui.components.ButtonComponent
 import com.example.nexum_trabajador.ui.components.ImagePreview
-import com.example.nexum_trabajador.ui.components.MyDialog2
+import com.example.nexum_trabajador.ui.components.SignUpSuccessDialog
 import com.example.nexum_trabajador.ui.navigation.rutes.AuthRoutes
 import com.example.nexum_trabajador.ui.presenter.sign_up.SignUpEvent
 import com.example.nexum_trabajador.ui.presenter.sign_up.SignUpState
 import com.example.nexum_trabajador.ui.presenter.sign_up.SignUpViewModel
+import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
 
 /**
  * @author Ernesto Bastidas Pulido
  * @email ebastidasp@unal.edu.co
  * @github https://github.com/ebastidasp
- * @since 02/09/2025
+ * @since 20/08/2025
  * @version 1.0
  */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SignUpProfilePictureScreen(
     viewModel: SignUpViewModel,
+    navController: NavController,
     go: (Any) -> Unit = {}
 ) {
     val state = viewModel.state
     val context = LocalContext.current
+
+    val capturedUsername = remember(state.username) { state.username }
 
     LaunchedEffect(state.signUpError) {
         if (state.signUpError) {
@@ -86,6 +94,7 @@ fun SignUpProfilePictureScreen(
 
     SignUpProfilePictureScreenContent(
         state = state,
+        username = capturedUsername,
         onProfilePictureChanged = {
             viewModel.onEvent(SignUpEvent.ProfilePictureUriChanged(it))
         },
@@ -95,12 +104,14 @@ fun SignUpProfilePictureScreen(
         onRegister = {
             viewModel.onEvent(SignUpEvent.RegisterButtonClicked)
         },
-        onDismissSuccess = {
+        onAcceptAndNavigate = {
             viewModel.onEvent(SignUpEvent.DismissSignUpSuccessDialog)
-        },
-        onNavigateSuccess = {
-            viewModel.onEvent(SignUpEvent.DismissSignUpSuccessDialog)
-            go(AuthRoutes.SignInScreen(username = state.username))
+            navController.navigate(AuthRoutes.SignInScreen(username = capturedUsername)) {
+                popUpTo(AuthRoutes.SignUpScreen) {
+                    inclusive = true
+                }
+                launchSingleTop = true
+            }
         }
     )
 }
@@ -109,160 +120,158 @@ fun SignUpProfilePictureScreen(
 @Preview(showBackground = true, showSystemUi = true)
 private fun SignUpProfilePictureScreenContent(
     state: SignUpState = SignUpState(),
+    username: String = "",
     onProfilePictureChanged: (Uri) -> Unit = {},
     onRemoveProfilePicture: (Int) -> Unit = {},
     onRegister: () -> Unit = {},
-    onDismissSuccess: () -> Unit = {},
-    onNavigateSuccess: () -> Unit = {}
+    onAcceptAndNavigate: () -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(
-                start = 20.dp,
-                top = 60.dp,
-                end = 20.dp,
-                bottom = 40.dp
-            ),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
+    val insets = WindowInsets.navigationBars.asPaddingValues()
+    Nexum_trabajadorTheme {
         Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "Perfil",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp,
-                    textAlign = TextAlign.Center
-                )
-
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit profile",
-                    tint = Color.Black,
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(128.dp)
-                    .semantics { contentDescription = "Profile image with camera button" },
-                contentAlignment = Alignment.Center
-            ) {
-                if (state.profilePictureUrl.isNotEmpty()) {
-                    ImagePreview(
-                        contentModifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
-                        containerModifier = Modifier.fillMaxSize(),
-                        uri = state.profilePictureUrl,
-                        onRemoveImage = onRemoveProfilePicture,
-                        index = 0,
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(Color(0xFFBDBDBD)), // gray placeholder
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            modifier = Modifier.size(80.dp),
-                            contentDescription = "Default avatar",
-                            tint = Color.White
-                        )
-                    }
-                }
-                EditProfilePictureButton(
-                    onProfilePictureUriChanged = onProfilePictureChanged
-                )
-            }
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 20.dp, end = 20.dp),
+                .fillMaxSize()
+                .padding(
+                    start = 20.dp,
+                    top = 60.dp,
+                    end = 20.dp,
+                    bottom = insets.calculateBottomPadding() + 25.dp
+                ),
             horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.Top
         ) {
-            Spacer(modifier = Modifier.height(100.dp))
-            Row {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Perfil",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit profile",
+                        tint = Color.Black,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(128.dp)
+                        .semantics { contentDescription = "Profile image with camera button" },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (state.profilePictureUrl.isNotEmpty()) {
+                        ImagePreview(
+                            contentModifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            containerModifier = Modifier.fillMaxSize(),
+                            uri = state.profilePictureUrl,
+                            onRemoveImage = onRemoveProfilePicture,
+                            index = 0,
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(Color(0xFFBDBDBD)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                modifier = Modifier.size(80.dp),
+                                contentDescription = "Default avatar",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    EditProfilePictureButton(
+                        onProfilePictureUriChanged = onProfilePictureChanged
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 20.dp, end = 20.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Spacer(modifier = Modifier.height(100.dp))
+                Row {
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = "Email icon",
+                        tint = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = state.email)
+                }
+                Row {
+                    Icon(
+                        imageVector = Icons.Default.Phone,
+                        contentDescription = "Phone icon",
+                        tint = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "${state.phoneCode} ${state.phone}")
+                }
+                Row {
+                    Icon(
+                        painter = painterResource(R.drawable.vector),
+                        contentDescription = "ID icon",
+                        tint = Color.Black
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = state.documentNumber)
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
-                    imageVector = Icons.Default.Email,
-                    contentDescription = "Email icon",
+                    imageVector = Icons.Default.Place,
+                    contentDescription = "Location icon",
                     tint = Color.Black
                 )
-                Spacer(modifier = Modifier.width(8.dp)) // space between icon and text
-                Text(text = state.email)
+                Spacer(modifier = Modifier.width(5.dp))
+                state.selectedMarketLocation?.let {
+                    Text(text = "${it.city.capitalizeFirstLetter()}, ${it.state.capitalizeFirstLetter()}, ${it.country.capitalizeFirstLetter()}")
+                }
             }
-            Row {
-                Icon(
-                    imageVector = Icons.Default.Phone,
-                    contentDescription = "Phone icon",
-                    tint = Color.Black
-                )
-                Spacer(modifier = Modifier.width(8.dp)) // space between icon and text
-                Text(text = "${state.phoneCode} ${state.phone}")
+            Spacer(modifier = Modifier.height(10.dp))
+            ButtonComponent(
+                value = "Terminar registro",
+                isLoading = state.isSigningUp,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = Color.White,
+                    disabledContentColor = MaterialTheme.colorScheme.secondary
+                ),
+                isEnabled = state.isProfilePictureValid && !state.isSigningUp
+            ) {
+                onRegister()
             }
-            Row {
-                Icon(
-                    painter = painterResource(R.drawable.vector),
-                    contentDescription = "ID icon",
-                    tint = Color.Black
-                )
-                Spacer(modifier = Modifier.width(8.dp)) // space between icon and text
-                Text(text = state.documentNumber)
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Place,
-                contentDescription = "Location icon",
-                tint = Color.Black
+
+            SignUpSuccessDialog(
+                show = state.isSignedUp,
+                username = username,
+                onAccept = onAcceptAndNavigate
             )
-            Spacer(modifier = Modifier.width(5.dp))
-            state.selectedMarketLocation?.let {
-                Text(text = "${it.city.capitalizeFirstLetter()}, ${it.state.capitalizeFirstLetter()}, ${it.country.capitalizeFirstLetter()}")
-            }
-
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        ButtonComponent(
-            value = "Terminar registro",
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                disabledContainerColor = MaterialTheme.colorScheme.surface,
-                contentColor = Color.White,
-                disabledContentColor = MaterialTheme.colorScheme.secondary
-            ),
-            isEnabled = state.isProfilePictureValid
-        ) {
-            Log.d("SignUpButton", "Button clicked")
-            onRegister()
-        }
-
-        MyDialog2(
-            title = "Registro exitoso",
-            show = state.isSignedUp,
-            onDismiss = onDismissSuccess,
-            onConfirm = onNavigateSuccess
-        ) {
-            Text(text = "El nombre de usuario autogenerado es: ${state.username}")
         }
     }
 }
@@ -295,8 +304,7 @@ private fun BoxScope.EditProfilePictureButton(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             Icon(
                 imageVector = Icons.Outlined.AddAPhoto,

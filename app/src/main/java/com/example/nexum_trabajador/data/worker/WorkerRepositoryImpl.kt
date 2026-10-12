@@ -50,4 +50,8 @@ class WorkerRepositoryImpl @Inject constructor(
         return remoteDataSource.updateWorkerDetails(WorkerMapper.toUpdateReq(worker))
     }
 
+    override fun setAvailability(available: Boolean): Flow<ApiResponse<com.example.nexum_trabajador.data.worker.remote.payload.res.WorkerRes>> {
+        return remoteDataSource.setAvailability(available)
+    }
+
 }

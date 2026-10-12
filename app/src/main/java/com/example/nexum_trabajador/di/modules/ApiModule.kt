@@ -115,4 +115,42 @@ object ApiModule {
         .client(okHttpClient)
         .build()
         .create(ProfileApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideContractApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): com.example.nexum_trabajador.data.contract.remote.ContractApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(com.example.nexum_trabajador.data.contract.remote.ContractApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): com.example.nexum_trabajador.data.user.remote.UserApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(com.example.nexum_trabajador.data.user.remote.UserApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCategoryApi(
+        retrofit: Retrofit.Builder,
+    ): com.example.nexum_trabajador.data.category.remote.CategoryApi = retrofit
+        .build()
+        .create(com.example.nexum_trabajador.data.category.remote.CategoryApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideJobOccupationApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): com.example.nexum_trabajador.data.job_occupation.remote.JobOccupationApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(com.example.nexum_trabajador.data.job_occupation.remote.JobOccupationApi::class.java)
 }

@@ -2,7 +2,6 @@ package com.example.nexum_trabajador.ui.presenter.sign_up.screens
 
 import android.content.res.Configuration
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,13 +54,22 @@ import com.example.nexum_trabajador.ui.presenter.sign_up.SignUpState
 import com.example.nexum_trabajador.ui.presenter.sign_up.SignUpViewModel
 import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
 
+/**
+ * @author Ernesto Bastidas Pulido
+ * @email ebastidasp@unal.edu.co
+ * @github https://github.com/ebastidasp
+ * @since 24/07/2025
+ * @version 1.0
+ */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun SignUpCellphoneScreen(
     viewModel: SignUpViewModel,
-    go: (Any) -> Unit = {}
+    go: (Any) -> Unit = {},
+    onBack: () -> Boolean
 ) {
     val state = viewModel.state
+
     LaunchedEffect(Unit) {
         viewModel.onEvent(SignUpEvent.LoadCountries(fetchFromRemote = true))
     }
@@ -75,7 +83,7 @@ fun SignUpCellphoneScreen(
             viewModel.onEvent(SignUpEvent.PhoneCodeChanged(it))
         },
         onBack = {
-            go(AuthRoutes.SignUpUserDataScreen)
+            onBack()
         },
         onNext = {
             go(AuthRoutes.SignUpBirthdayScreen)
@@ -106,12 +114,10 @@ fun SignUpCellphoneScreenContent(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
-        )
-        {
+        ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
-            )
-            {
+            ) {
                 Text(
                     "¿Cuál es tu número de teléfono?",
                     fontWeight = FontWeight.Bold,
@@ -182,8 +188,12 @@ private fun PhoneCodePicker(
     var expanded by rememberSaveable { mutableStateOf(false) }
     val countries = state.countries
 
-    // State is king. The text displayed is always derived from the ViewModel's state.
-    var displayText by rememberSaveable { mutableStateOf(if (state.selectedCountry == null) "Código" else "${state.selectedCountry!!.flagEmoji} ${state.selectedCountry!!.phoneCode}") }
+    var displayText by rememberSaveable(state.selectedCountry) {
+        mutableStateOf(
+            if (state.selectedCountry == null) "Código"
+            else "${state.selectedCountry?.flagEmoji ?: ""} ${state.selectedCountry?.phoneCode ?: ""}"
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -194,7 +204,6 @@ private fun PhoneCodePicker(
                 RoundedCornerShape(12.dp)
             )
             .clip(RoundedCornerShape(12.dp))
-            // Using the explicit clickable modifier with null indication to prevent crashes in previews.
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -226,10 +235,9 @@ private fun PhoneCodePicker(
             ) {
                 countries.forEach { country ->
                     DropdownMenuItem(
-                        text = { Text("${country.flagEmoji} ${country.phoneCode}") },
+                        text = { Text("${country.flagEmoji ?: ""} ${country.phoneCode ?: ""}") },
                         onClick = {
-                            // Only fire the event. The UI will update automatically via recomposition.
-                            displayText = "${country.flagEmoji} ${country.phoneCode}"
+                            displayText = "${country.flagEmoji ?: ""} ${country.phoneCode ?: ""}"
                             phoneCodeChanged(country)
                             expanded = false
                         },

@@ -9,6 +9,11 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.example.nexum_trabajador.ui.navigation.rutes.HomeRoutes
 import com.example.nexum_trabajador.ui.presenter.job_application.JobApplicationViewModel
+import com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationMaterialsScreen
+import com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationProposalScreen
+import com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationScheduleScreen
+import com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationSummaryScreen
+import com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationTasksScreen
 
 fun NavGraphBuilder.jobApplicationGraph(
     navController: NavController
@@ -21,9 +26,9 @@ fun NavGraphBuilder.jobApplicationGraph(
             }
             val viewModel: JobApplicationViewModel = hiltViewModel(parentEntry)
             val args = parentEntry.toRoute<HomeRoutes.JobApplicationGraph>()
-            viewModel.init(args.jobOfferId, args.jobOfferUuid)
+            viewModel.init(args.jobOfferId, args.jobOfferUuid, args.jobOfferTitle)
             
-            com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationProposalScreen(
+            JobApplicationProposalScreen(
                 viewModel = viewModel,
                 onNavigateNext = { navController.navigate(HomeRoutes.JobApplicationGraph.TasksScreen) },
                 onNavigateBack = { navController.popBackStack() }
@@ -36,7 +41,7 @@ fun NavGraphBuilder.jobApplicationGraph(
             }
             val viewModel: JobApplicationViewModel = hiltViewModel(parentEntry)
             
-            com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationTasksScreen(
+            JobApplicationTasksScreen(
                 viewModel = viewModel,
                 onNavigateNext = { navController.navigate(HomeRoutes.JobApplicationGraph.MaterialsScreen) },
                 onNavigateBack = { navController.popBackStack() }
@@ -49,7 +54,7 @@ fun NavGraphBuilder.jobApplicationGraph(
             }
             val viewModel: JobApplicationViewModel = hiltViewModel(parentEntry)
             
-            com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationMaterialsScreen(
+            JobApplicationMaterialsScreen(
                 viewModel = viewModel,
                 onNavigateNext = { navController.navigate(HomeRoutes.JobApplicationGraph.ScheduleScreen) },
                 onNavigateBack = { navController.popBackStack() }
@@ -62,7 +67,7 @@ fun NavGraphBuilder.jobApplicationGraph(
             }
             val viewModel: JobApplicationViewModel = hiltViewModel(parentEntry)
             
-            com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationScheduleScreen(
+            JobApplicationScheduleScreen(
                 viewModel = viewModel,
                 onNavigateNext = { navController.navigate(HomeRoutes.JobApplicationGraph.SummaryScreen) },
                 onNavigateBack = { navController.popBackStack() }
@@ -75,7 +80,7 @@ fun NavGraphBuilder.jobApplicationGraph(
             }
             val viewModel: JobApplicationViewModel = hiltViewModel(parentEntry)
             
-            com.example.nexum_trabajador.ui.presenter.job_application.screens.JobApplicationSummaryScreen(
+            JobApplicationSummaryScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
                 onSuccess = {

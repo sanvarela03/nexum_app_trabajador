@@ -1,13 +1,19 @@
 package com.example.nexum_trabajador.ui.presenter.job_application.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.nexum_trabajador.ui.presenter.job_application.JobApplicationViewModel
+import com.example.nexum_trabajador.ui.presenter.job_application.components.SelectProposalBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,8 +38,27 @@ fun JobApplicationProposalScreen(
     var proposalText by remember { mutableStateOf(state.proposalText) }
     var laborCost by remember { mutableStateOf(if (state.laborCost == 0.0) "" else state.laborCost.toString()) }
     var warrantyDays by remember { mutableStateOf(if (state.workWarrantyInDays == 0) "" else state.workWarrantyInDays.toString()) }
+    var showProposalPicker by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.proposalText, state.laborCost, state.workWarrantyInDays) {
+        proposalText = state.proposalText
+        laborCost = if (state.laborCost == 0.0) "" else state.laborCost.toString()
+        warrantyDays = if (state.workWarrantyInDays == 0) "" else state.workWarrantyInDays.toString()
+    }
 
     val primaryGreen = Color(0xFF4A7D29)
+
+    if (showProposalPicker) {
+        SelectProposalBottomSheet(
+            proposals = state.reusableProposals,
+            isLoading = state.isLoadingProposals,
+            onSelectProposal = { proposal ->
+                viewModel.applyReusableProposal(proposal)
+                showProposalPicker = false
+            },
+            onDismiss = { showProposalPicker = false }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -65,9 +91,11 @@ fun JobApplicationProposalScreen(
     ) { padding ->
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(padding)
-                .padding(20.dp)
-                .fillMaxSize(),
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Header: Paso + Título de sección
@@ -102,6 +130,68 @@ fun JobApplicationProposalScreen(
                     color = Color.Gray,
                     lineHeight = 20.sp
                 )
+            }
+
+            // Botón para cargar cotización o borrador previo
+            OutlinedCard(
+                onClick = { showProposalPicker = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = primaryGreen.copy(alpha = 0.06f)
+                ),
+                border = BorderStroke(1.dp, primaryGreen.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        color = primaryGreen,
+                        shape = CircleShape,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.History,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Usar cotización o borrador",
+                            style = MaterialTheme.typography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = primaryGreen
+                            )
+                        )
+                        Text(
+                            text = if (state.reusableProposals.isNotEmpty()) {
+                                "${state.reusableProposals.size} disponibles para reutilizar"
+                            } else {
+                                "Ahorra tiempo reutilizando propuestas anteriores"
+                            },
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = Color(0xFF4B5563),
+                                fontSize = 12.sp
+                            )
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = primaryGreen,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             // Inputs Card
@@ -172,7 +262,7 @@ fun JobApplicationProposalScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
@@ -197,6 +287,8 @@ fun JobApplicationProposalScreen(
                     color = Color.White
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

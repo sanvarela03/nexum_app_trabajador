@@ -150,4 +150,7 @@ dependencies {
     // Constraint layout
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.constraintlayout.compose)
+
+    // EncryptedSharedPreferences
+    implementation(libs.androidx.security.crypto)
 }
