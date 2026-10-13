@@ -31,5 +31,11 @@ data class JobOccupationRes(
     val yearsExperience: Int?,
 
     @SerializedName("is_active")
-    val isActive: Boolean?
+    val isActive: Boolean?,
+
+    @SerializedName("certifications")
+    val certifications: List<com.example.nexum_trabajador.data.certification.remote.payload.res.CertificationRes> = emptyList(),
+
+    @SerializedName("skills")
+    val skills: List<com.example.nexum_trabajador.data.skill_set.remote.payload.res.SkillSetRes> = emptyList()
 )

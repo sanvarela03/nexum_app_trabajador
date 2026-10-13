@@ -153,4 +153,34 @@ object ApiModule {
         .client(okHttpClient)
         .build()
         .create(com.example.nexum_trabajador.data.job_occupation.remote.JobOccupationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideInsuranceApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): com.example.nexum_trabajador.data.insurance.remote.InsuranceApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(com.example.nexum_trabajador.data.insurance.remote.InsuranceApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCertificationApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): com.example.nexum_trabajador.data.certification.remote.CertificationApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(com.example.nexum_trabajador.data.certification.remote.CertificationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSkillSetApi(
+        retrofit: Retrofit.Builder,
+        okHttpClient: OkHttpClient,
+    ): com.example.nexum_trabajador.data.skill_set.remote.SkillSetApi = retrofit
+        .client(okHttpClient)
+        .build()
+        .create(com.example.nexum_trabajador.data.skill_set.remote.SkillSetApi::class.java)
 }

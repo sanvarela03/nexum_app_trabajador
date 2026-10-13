@@ -93,11 +93,27 @@ fun NavGraphBuilder.homeGraph(
             )
         }
         composable<DrawerRoutes.ProfileScreen> {
-            ProfileScreen(homeViewModel = homeViewModel)
+            ProfileScreen(
+                homeViewModel = homeViewModel,
+                onNavigateToOccupations = {
+                    navController.navigate(DrawerRoutes.OccupationsScreen)
+                },
+                onNavigateToInsurances = {
+                    navController.navigate(DrawerRoutes.InsurancesScreen)
+                }
+            )
         }
 
         composable<DrawerRoutes.OccupationsScreen> {
             OccupationsScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<DrawerRoutes.InsurancesScreen> {
+            com.example.nexum_trabajador.ui.presenter.insurance.InsurancesScreen(
                 onBack = {
                     navController.popBackStack()
                 }

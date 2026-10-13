@@ -10,10 +10,26 @@ data class OccupationsState(
     val categories: List<CategoryRes> = emptyList(),
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    // Add dialog state
+    // Add occupation dialog state
     val showAddDialog: Boolean = false,
     val selectedCategory: CategoryRes? = null,
     val occupationName: String = "",
     val occupationDescription: String = "",
-    val yearsExperience: String = ""
+    val yearsExperience: String = "",
+
+    // Add Skill dialog state
+    val showAddSkillDialog: Boolean = false,
+    val targetOccupationIdForSkill: Long? = null,
+    val newSkillName: String = "",
+    val isSavingSkill: Boolean = false,
+
+    // Add Certification dialog state
+    val showAddCertDialog: Boolean = false,
+    val targetOccupationIdForCert: Long? = null,
+    val certName: String = "",
+    val certIssuedBy: String = "",
+    val certFileUri: android.net.Uri? = null,
+    val certUploadedUrl: String? = null,
+    val isUploadingCertFile: Boolean = false,
+    val isSavingCert: Boolean = false
 )

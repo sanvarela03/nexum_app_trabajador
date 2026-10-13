@@ -14,5 +14,21 @@ sealed class OccupationsEvent {
     object SubmitCreate : OccupationsEvent()
     data class ToggleStatus(val occupation: JobOccupationRes) : OccupationsEvent()
     data class DeleteOccupation(val id: Long) : OccupationsEvent()
+    // Skill events
+    data class OpenAddSkillDialog(val occupationId: Long) : OccupationsEvent()
+    object DismissSkillDialog : OccupationsEvent()
+    data class SkillNameChanged(val name: String) : OccupationsEvent()
+    object SubmitAddSkill : OccupationsEvent()
+    data class RemoveSkill(val occupationId: Long, val skillId: Long) : OccupationsEvent()
+
+    // Certification events
+    data class OpenAddCertDialog(val occupationId: Long) : OccupationsEvent()
+    object DismissCertDialog : OccupationsEvent()
+    data class CertNameChanged(val name: String) : OccupationsEvent()
+    data class CertIssuedByChanged(val issuedBy: String) : OccupationsEvent()
+    data class CertFileSelected(val uri: android.net.Uri) : OccupationsEvent()
+    object SubmitAddCert : OccupationsEvent()
+    data class DeleteCert(val occupationId: Long, val certId: Long) : OccupationsEvent()
+
     object ClearMessages : OccupationsEvent()
 }

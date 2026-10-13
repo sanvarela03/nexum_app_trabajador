@@ -1,29 +1,23 @@
 package com.example.nexum_trabajador.ui.presenter.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.OnlinePrediction
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,38 +50,29 @@ import com.example.nexum_trabajador.ui.presenter.home.HomeViewModel
 @Composable
 fun ProfileScreen(
     homeViewModel: HomeViewModel,
+    onNavigateToOccupations: () -> Unit = {},
+    onNavigateToInsurances: () -> Unit = {}
 ) {
     val state = homeViewModel.state
     val worker: Worker? = state.worker
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(bottom = 24.dp)
         ) {
-//            GlideImage(
-//                model = worker?.profilePictureUrl ?: "https://http.cat/images/200.jpg",
-//                contentDescription = "Profile Image",
-//                modifier = Modifier.size(128.dp)
-//            )
-//            Text("Profile Screen")
-//            Text("Name: ${worker?.firstName} ${worker?.lastName}")
-//            Text("Email: ${worker?.email}")
-//            Text("Phone: ${worker?.phone}")
-//            Text("Username: ${worker?.username}")
-//            Text("Date Joined: ${worker?.dateJoined}")
-//            Text("Last Login: ${worker?.lastLogin}")
-//            Text("Enabled: ${worker?.isEnabled}")
-//            Text("Verification Code: ${worker?.verificationCode}")
-//            Text("Verification Code Timestamp: ${worker?.verificationCodeTimestamp}")
-//            Text("Firebase Token: ${worker?.firebaseToken}")
-            ProfileScreenContent(worker)
+            ProfileScreenContent(
+                worker = worker,
+                onNavigateToOccupations = onNavigateToOccupations,
+                onNavigateToInsurances = onNavigateToInsurances
+            )
         }
-
-
     }
 }
 
@@ -113,24 +98,24 @@ fun ProfileScreenContent(
         latitude = 1.0,
         longitude = 2.0,
         bio = "I am a software engineer"
-    )
+    ),
+    onNavigateToOccupations: () -> Unit = {},
+    onNavigateToInsurances: () -> Unit = {}
 ) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (worker != null && worker.profilePictureUrl.isNotEmpty() && worker.profilePictureUrl.isNotBlank() && worker.profilePictureUrl.contains(
-                    "https"
-                )
-            ) {
+            if (worker != null && worker.profilePictureUrl.isNotEmpty() && worker.profilePictureUrl.isNotBlank() && worker.profilePictureUrl.contains("https")) {
                 GlideImage(
                     model = worker.profilePictureUrl ?: "https://http.cat/images/200.jpg",
                     contentDescription = "Profile Image",
@@ -145,7 +130,7 @@ fun ProfileScreenContent(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFBDBDBD)), // gray placeholder
+                        .background(Color(0xFFBDBDBD)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -156,13 +141,55 @@ fun ProfileScreenContent(
                     )
                 }
             }
+
             Text("Hola,")
             Text(
                 "${worker?.firstName} ${worker?.lastName}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             )
-            Spacer(modifier = Modifier.height(20.dp))
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Direct Links to Skills / Occupations and Insurances
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                ),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Capacidades y Respaldo",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    ActionNavigationItem(
+                        name = "Mis Profesiones y Habilidades",
+                        subtitle = "Especialidades, destrezas y certificados",
+                        icon = Icons.Filled.Work,
+                        onClick = onNavigateToOccupations
+                    )
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    ActionNavigationItem(
+                        name = "Mis Seguros y Pólizas",
+                        subtitle = "ARL, Responsabilidad Civil y vigencias",
+                        icon = Icons.Filled.Shield,
+                        onClick = onNavigateToInsurances
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             InLineItem(
                 name = "Número de trabajador",
                 value = worker?.id.toString(),
@@ -203,6 +230,55 @@ fun ProfileScreenContent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ActionNavigationItem(
+    name: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(vertical = 6.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column {
+                Text(name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(subtitle, fontSize = 11.sp, color = Color.Gray)
+            }
+        }
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

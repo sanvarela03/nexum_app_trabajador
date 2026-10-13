@@ -153,4 +153,25 @@ object RepositoryModule {
         remoteDataSource: com.example.nexum_trabajador.data.job_occupation.remote.JobOccupationRemoteDataSource
     ): com.example.nexum_trabajador.domain.repository.JobOccupationRepository =
         com.example.nexum_trabajador.data.job_occupation.repository.JobOccupationRepositoryImpl(remoteDataSource)
+
+    @Provides
+    @Singleton
+    fun provideInsuranceRepository(
+        remoteDataSource: com.example.nexum_trabajador.data.insurance.remote.InsuranceRemoteDataSource
+    ): com.example.nexum_trabajador.domain.repository.InsuranceRepository =
+        com.example.nexum_trabajador.data.insurance.repository.InsuranceRepositoryImpl(remoteDataSource)
+
+    @Provides
+    @Singleton
+    fun provideCertificationRepository(
+        remoteDataSource: com.example.nexum_trabajador.data.certification.remote.CertificationRemoteDataSource
+    ): com.example.nexum_trabajador.domain.repository.CertificationRepository =
+        com.example.nexum_trabajador.data.certification.repository.CertificationRepositoryImpl(remoteDataSource)
+
+    @Provides
+    @Singleton
+    fun provideSkillSetRepository(
+        remoteDataSource: com.example.nexum_trabajador.data.skill_set.remote.SkillSetRemoteDataSource
+    ): com.example.nexum_trabajador.domain.repository.SkillSetRepository =
+        com.example.nexum_trabajador.data.skill_set.repository.SkillSetRepositoryImpl(remoteDataSource)
 }

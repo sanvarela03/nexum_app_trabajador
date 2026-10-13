@@ -18,6 +18,9 @@ sealed class DrawerRoutes {
     object OccupationsScreen : DrawerRoutes()
 
     @Serializable
+    object InsurancesScreen : DrawerRoutes()
+
+    @Serializable
     object SettingsScreen : DrawerRoutes()
     @Serializable
     object AddressScreen : DrawerRoutes()
