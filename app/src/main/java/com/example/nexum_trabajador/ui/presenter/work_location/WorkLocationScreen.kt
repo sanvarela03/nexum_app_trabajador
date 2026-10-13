@@ -14,27 +14,33 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -52,6 +58,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +75,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.nexum_trabajador.data.job_occupation.remote.payload.res.JobOccupationRes
 import com.example.nexum_trabajador.domain.model.Worker
 import com.example.nexum_trabajador.ui.components.DialogComponent
 import com.example.nexum_trabajador.ui.presenter.home.HomeEvent
@@ -85,7 +93,8 @@ import com.google.android.gms.maps.model.LatLng
 @Composable
 fun WorkLocationScreen(
     homeViewModel: HomeViewModel,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    onNavigateToOccupations: () -> Unit = {}
 ) {
     val state = homeViewModel.state
     val worker: Worker? = state.worker
@@ -93,6 +102,7 @@ fun WorkLocationScreen(
 
     LaunchedEffect(Unit) {
         homeViewModel.refreshWorker(fetchFromRemote = true)
+        homeViewModel.loadOccupations()
     }
 
     if (state.showDialog) {
@@ -116,6 +126,7 @@ fun WorkLocationScreen(
             isAvailable = isAvailable,
             isTogglingAvailability = state.isTogglingAvailability,
             isUpdating = state.isUpdating,
+            occupations = state.occupations,
             onToggleAvailability = { nextState ->
                 homeViewModel.onEvent(HomeEvent.ToggleAvailability(nextState))
             },
@@ -126,7 +137,8 @@ fun WorkLocationScreen(
                 homeViewModel.onEvent(HomeEvent.LatitudeChanged(latLng.latitude))
                 homeViewModel.onEvent(HomeEvent.LongitudeChanged(latLng.longitude))
                 homeViewModel.onEvent(HomeEvent.AddressChanged(address))
-            }
+            },
+            onNavigateToOccupations = onNavigateToOccupations
         )
     }
 
@@ -172,10 +184,16 @@ private fun WorkLocationContent(
     isAvailable: Boolean,
     isTogglingAvailability: Boolean,
     isUpdating: Boolean,
+    occupations: List<JobOccupationRes>,
     onToggleAvailability: (Boolean) -> Unit,
     onSaveLocation: () -> Unit,
-    onMapClick: (LatLng, String) -> Unit
+    onMapClick: (LatLng, String) -> Unit,
+    onNavigateToOccupations: () -> Unit
 ) {
+    val activeOccupations = occupations.filter { it.isActive ?: true }
+    val activeCategories = activeOccupations.mapNotNull { it.categoryName }.distinct()
+    val hasNoActiveOccupations = activeOccupations.isEmpty()
+
     // Pulse animation for Uber Online status dot
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
@@ -206,55 +224,159 @@ private fun WorkLocationContent(
             onMapClick = onMapClick
         )
 
-        // Uber Floating Top Status Pill
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = if (isAvailable) Color(0xFF1B5E20).copy(alpha = 0.92f) else Color(0xFF263238).copy(alpha = 0.92f),
-            shadowElevation = 8.dp,
-            border = BorderStroke(
-                width = 1.dp,
-                color = if (isAvailable) Color(0xFF4CAF50).copy(alpha = 0.5f) else Color.Gray.copy(alpha = 0.3f)
-            ),
+        // Top Area: Status Pill and Alert or Active Categories indicator
+        Column(
             modifier = Modifier
-                .padding(top = 16.dp)
+                .fillMaxWidth()
                 .align(Alignment.TopCenter)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Uber Floating Top Status Pill
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = if (isAvailable) Color(0xFF1B5E20).copy(alpha = 0.92f) else Color(0xFF263238).copy(alpha = 0.92f),
+                shadowElevation = 8.dp,
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (isAvailable) Color(0xFF4CAF50).copy(alpha = 0.5f) else Color.Gray.copy(alpha = 0.3f)
+                )
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (isAvailable) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        if (isAvailable) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .scale(pulseScale)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF00E676).copy(alpha = pulseAlpha))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF00E676))
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFB0BEC5))
+                            )
+                        }
+                    }
+                    Text(
+                        text = if (isAvailable) "EN LÍNEA" else "DESCONECTADO",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+
+            // Alerta si NO tiene profesiones seleccionadas / activas
+            if (hasNoActiveOccupations) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                    border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToOccupations() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         Box(
                             modifier = Modifier
-                                .size(16.dp)
-                                .scale(pulseScale)
+                                .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF00E676).copy(alpha = pulseAlpha))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF00E676))
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFB0BEC5))
+                                .background(Color(0xFFFF9800).copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsOff,
+                                contentDescription = null,
+                                tint = Color(0xFFE65100),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (occupations.isEmpty()) "Sin profesiones configuradas" else "Profesiones en pausa",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = Color(0xFFE65100)
+                            )
+                            Text(
+                                text = "No recibirás notificaciones ni solicitudes hasta que selecciones una o más profesiones.",
+                                fontSize = 11.sp,
+                                color = Color(0xFF5D4037),
+                                lineHeight = 15.sp
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = Color(0xFFE65100),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
-                Text(
-                    text = if (isAvailable) "EN LÍNEA" else "DESCONECTADO",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    letterSpacing = 1.sp
-                )
+            } else {
+                // Mini indicador compacto flotante de categorías seleccionadas
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White.copy(alpha = 0.95f),
+                    shadowElevation = 4.dp,
+                    border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                    modifier = Modifier.clickable { onNavigateToOccupations() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Work,
+                            contentDescription = null,
+                            tint = Color(0xFF4B7B2B),
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Categorías activas (${activeCategories.size}):",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF424242)
+                        )
+                        Text(
+                            text = activeCategories.joinToString(", "),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF4B7B2B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 160.dp)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
             }
         }
 
@@ -396,6 +518,73 @@ private fun WorkLocationContent(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     fontSize = 13.sp
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(
+                            color = Color(0xFFE0E0E0),
+                            thickness = 0.8.dp,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+
+                        // Categorías de Servicio Row
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onNavigateToOccupations() },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Work,
+                                    contentDescription = "Categorías",
+                                    tint = if (activeCategories.isNotEmpty()) Color(0xFF4B7B2B) else Color(0xFFE65100),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = "CATEGORÍAS DE SERVICIO",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (activeCategories.isNotEmpty()) Color(0xFF4B7B2B) else Color(0xFFE65100),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    )
+                                    if (activeCategories.isEmpty()) {
+                                        Text(
+                                            text = "⚠️ Sin profesiones activas. Toca para configurar.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFE65100),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    } else {
+                                        Text(
+                                            text = activeCategories.joinToString(", "),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = Color(0xFF212121),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                            TextButton(
+                                onClick = onNavigateToOccupations,
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (activeCategories.isEmpty()) "Configurar" else "Editar",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }

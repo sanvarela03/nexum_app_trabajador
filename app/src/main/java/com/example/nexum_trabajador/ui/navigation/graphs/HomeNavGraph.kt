@@ -46,7 +46,10 @@ fun NavGraphBuilder.homeGraph(
         composable<HomeRoutes.CategoriesScreen> {
             WorkLocationScreen(
                 homeViewModel = homeViewModel,
-                onBack = null
+                onBack = null,
+                onNavigateToOccupations = {
+                    navController.navigate(DrawerRoutes.OccupationsScreen)
+                }
             )
         }
         composable<HomeRoutes.AppointmentsScreen> {
@@ -128,6 +131,9 @@ fun NavGraphBuilder.homeGraph(
                 homeViewModel = homeViewModel,
                 onBack = {
                     navController.popBackStack()
+                },
+                onNavigateToOccupations = {
+                    navController.navigate(DrawerRoutes.OccupationsScreen)
                 }
             )
         }
