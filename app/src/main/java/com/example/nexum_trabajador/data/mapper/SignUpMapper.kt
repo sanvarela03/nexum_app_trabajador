@@ -17,9 +17,10 @@ class SignUpMapper @Inject constructor() {
             username = generatedUsername,
             email = state.email,
             password = state.password,
-            phoneCode = state.phoneCode.split(' ').firstOrNull() ?: "",
+            phoneCode = (state.phoneCode.ifBlank { state.selectedCountry?.phoneCode ?: "+57" })
+                .split(' ').firstOrNull() ?: "+57",
             phoneNumber = state.phone,
-            marketLocationId = state.selectedMarketLocation?.id ?: 0,
+            marketLocationId = state.selectedMarketLocation?.id ?: 1L,
             firebaseToken = firebaseToken,
             profile = ProfileReq(
                 firstName = state.name,
