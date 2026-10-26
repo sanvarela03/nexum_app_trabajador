@@ -18,7 +18,7 @@ private val REMOTE_WS_URL = "wss://nexum-msg-be.onrender.com"
 
 // Cambiar a `true` para apuntar al backend local (host machine),
 // o `false` para apuntar al backend remoto en Render.
-val useLocal = true
+val useLocal = false
 
 val HOST_URL = if (useLocal) LOCAL_URL else REMOTE_URL
 val MSG_URL = if (useLocal) LOCAL_MSG_URL else REMOTE_MSG_URL

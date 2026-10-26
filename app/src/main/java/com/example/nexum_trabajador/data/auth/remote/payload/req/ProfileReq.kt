@@ -22,4 +22,8 @@ data class ProfileReq(
     val frontDocumentUrl: String,
     @SerializedName("back_document_url")
     val backDocumentUrl: String,
+    @SerializedName("document_number")
+    val documentNumber: String? = null,
+    @SerializedName("document_type")
+    val documentType: String? = "CC",
 )
