@@ -1,7 +1,17 @@
 package com.example.nexum_trabajador.ui.navigation.graphs
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
@@ -15,120 +25,125 @@ import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpCellphone
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpCityScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpIDScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpPasswordScreen
-import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpPolicyScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpProfilePictureScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpScreen
-import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpTosScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpUploadDocumentScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.screens.SignUpUserDataScreen
 
-/**
- * @author Santiago Varela Daza
- * @email svarela03@uan.edu.co
- * @github https://github.com/sanvarela03
- * @since 7/23/2025
- * @version 1.0
- */
+private const val ANIMATION_DURATION = 1000
+
+private typealias AnimationScope = AnimatedContentTransitionScope<NavBackStackEntry>
+
+data class ScreenTransitions(
+    val enterTransition: AnimationScope.() -> EnterTransition? = { Transitions.defaultEnterTransition() },
+    val exitTransition: AnimationScope.() -> ExitTransition? = { Transitions.defaultExitTransition() },
+    val popEnterTransition: AnimationScope.() -> EnterTransition? = { Transitions.defaultPopEnterTransition() },
+    val popExitTransition: AnimationScope.() -> ExitTransition? = { Transitions.defaultPopExitTransition() }
+)
+
+inline fun <reified T : Any> NavGraphBuilder.composableWithTransitions(
+    transitions: ScreenTransitions = ScreenTransitions(),
+    noinline content: @Composable (NavBackStackEntry) -> Unit
+) {
+    composable<T>(
+        enterTransition = transitions.enterTransition,
+        exitTransition = transitions.exitTransition,
+        popEnterTransition = transitions.popEnterTransition,
+        popExitTransition = transitions.popExitTransition,
+    ) { backStackEntry ->
+        content(backStackEntry)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
 fun NavGraphBuilder.authGraph(
     navController: NavController,
-    signUpViewModel: SignUpViewModel
+    viewModel: SignUpViewModel,
+    startDestination: AuthRoutes
 ) {
-    navigation<Graph.InitialGraph>(startDestination = AuthRoutes.SignUpScreen) {
-        composable<AuthRoutes.SignInScreen>(
+    navigation<Graph.InitialGraph>(
+        startDestination = startDestination,
+    ) {
+        val firstScreenTransitions = ScreenTransitions(
+            enterTransition = { fadeIn(animationSpec = tween(ANIMATION_DURATION)) },
+            exitTransition = { fadeOut(animationSpec = tween(ANIMATION_DURATION)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(ANIMATION_DURATION)) },
+            popExitTransition = { fadeOut(animationSpec = tween(ANIMATION_DURATION)) }
+        )
 
-        ) {
+        val onBack = { navController.popBackStack() }
+
+        composableWithTransitions<AuthRoutes.SignInScreen> {
             val args = it.toRoute<AuthRoutes.SignInScreen>()
-            val username = args.username
-            SignInScreen(
-                username = username,
-                go = { navController.navigate(it) }
-            )
+            SignInScreen(username = args.username, go = { navController.navigate(it) })
         }
-        composable<AuthRoutes.SignUpScreen>(
-            exitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(1000)
-                )
-            },
-            popEnterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(1000)
-                )
-            }
-        ) { SignUpScreen(go = { navController.navigate(it) }, viewModel = signUpViewModel) }
-        composable<AuthRoutes.SignUpUserDataScreen>(
-            enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(1000)
-                )
-            },
-            popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(1000)
-                )
-            }
-        ) {
+
+        composableWithTransitions<AuthRoutes.SignUpScreen>(transitions = firstScreenTransitions) { backStackEntry ->
+            SignUpScreen(go = { navController.navigate(it) }, viewModel = viewModel)
+        }
+
+        composableWithTransitions<AuthRoutes.SignUpUserDataScreen> { backStackEntry ->
             SignUpUserDataScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
-        composable<AuthRoutes.SignUpCellphoneScreen> {
+
+        composableWithTransitions<AuthRoutes.SignUpCellphoneScreen> { backStackEntry ->
             SignUpCellphoneScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
-        composable<AuthRoutes.SignUpBirthdayScreen> {
+
+        composableWithTransitions<AuthRoutes.SignUpBirthdayScreen> { backStackEntry ->
             SignUpBirthDateScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
-        composable<AuthRoutes.SignUpCityScreen> {
+
+        composableWithTransitions<AuthRoutes.SignUpCityScreen> { backStackEntry ->
             SignUpCityScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
-        composable<AuthRoutes.SignUpIDScreen> {
+
+        composableWithTransitions<AuthRoutes.SignUpIDScreen> { backStackEntry ->
             SignUpIDScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
 
-        composable<AuthRoutes.SignUpUploadDocumentScreen> {
+        composableWithTransitions<AuthRoutes.SignUpUploadDocumentScreen> { backStackEntry ->
             SignUpUploadDocumentScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
 
-        composable<AuthRoutes.SignUpPasswordScreen> {
+        composableWithTransitions<AuthRoutes.SignUpPasswordScreen> { backStackEntry ->
             SignUpPasswordScreen(
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                onBack = onBack,
+                viewModel = viewModel
             )
         }
 
-
-        composable<AuthRoutes.SignUpProfilePictureScreen> {
+        composableWithTransitions<AuthRoutes.SignUpProfilePictureScreen> { backStackEntry ->
             SignUpProfilePictureScreen(
+                navController = navController,
                 go = { navController.navigate(it) },
-                viewModel = signUpViewModel
+                viewModel = viewModel
             )
-        }
-
-        composable<AuthRoutes.SignUpPolicyScreen> {
-            SignUpPolicyScreen()
-        }
-        composable<AuthRoutes.SignUpTosScreen> {
-            SignUpTosScreen()
         }
     }
 }

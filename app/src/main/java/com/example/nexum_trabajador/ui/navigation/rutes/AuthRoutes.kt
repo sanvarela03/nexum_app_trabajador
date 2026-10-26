@@ -2,7 +2,6 @@ package com.example.nexum_trabajador.ui.navigation.rutes
 
 import kotlinx.serialization.Serializable
 
-
 /**
  * @author Santiago Varela Daza
  * @email svarela03@uan.edu.co
@@ -11,47 +10,46 @@ import kotlinx.serialization.Serializable
  * @version 1.0
  */
 @Serializable
-sealed class AuthRoutes {
+sealed interface AuthRoutes {
     @Serializable
-    data class SignInScreen(var username: String? = null) : AuthRoutes()
+    data class SignInScreen(var username: String? = null) : AuthRoutes
 
     @Serializable
-    object SignUpScreen : AuthRoutes()
+    object SignUpScreen : AuthRoutes
 
     @Serializable
-    object SplashScreen : AuthRoutes()
+    object SplashScreen : AuthRoutes
 
     @Serializable
-    object HomeScreen : AuthRoutes()
+    object HomeScreen : AuthRoutes
 
     @Serializable
-    object SignUpBirthdayScreen : AuthRoutes()
+    object SignUpBirthdayScreen : AuthRoutes
 
     @Serializable
-    object SignUpCellphoneScreen : AuthRoutes()
+    object SignUpCellphoneScreen : AuthRoutes
 
     @Serializable
-    object SignUpUserDataScreen : AuthRoutes()
+    object SignUpUserDataScreen : AuthRoutes
 
     @Serializable
-    object SignUpUploadDocumentScreen : AuthRoutes()
+    object SignUpUploadDocumentScreen : AuthRoutes
 
     @Serializable
-    object SignUpCityScreen : AuthRoutes()
+    object SignUpCityScreen : AuthRoutes
 
     @Serializable
-    object SignUpIDScreen : AuthRoutes()
+    object SignUpIDScreen : AuthRoutes
 
     @Serializable
-    object SignUpPasswordScreen : AuthRoutes()
+    object SignUpPasswordScreen : AuthRoutes
 
     @Serializable
-    object SignUpProfilePictureScreen : AuthRoutes()
+    object SignUpProfilePictureScreen : AuthRoutes
 
     @Serializable
-    object SignUpPolicyScreen : AuthRoutes()
+    object SignUpPolicyScreen : AuthRoutes
 
     @Serializable
-    object SignUpTosScreen : AuthRoutes()
-
+    object SignUpTosScreen : AuthRoutes
 }

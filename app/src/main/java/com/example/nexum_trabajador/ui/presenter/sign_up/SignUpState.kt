@@ -4,6 +4,13 @@ import android.net.Uri
 import com.example.nexum_trabajador.domain.model.Country
 import com.example.nexum_trabajador.domain.model.MarketLocation
 
+/**
+ * @author Ernesto Bastidas Pulido
+ * @email ebastidasp@unal.edu.co
+ * @github https://github.com/ebastidasp
+ * @since 05/08/2025
+ * @version 1.0
+ */
 data class SignUpState(
     val email: String = "",
     val username: String = "",
@@ -32,6 +39,7 @@ data class SignUpState(
     val selectedMarketLocation: MarketLocation? = null,
 
     val isLoadingCountries: Boolean = false,
+    val isLoadingMarketLocations: Boolean = false,
     val countries: List<Country> = emptyList(),
     val countriesError: String? = null,
 
@@ -60,6 +68,7 @@ data class SignUpState(
     val frontDocumentUriError: Boolean = false,
     val backDocumentUriError: Boolean = false,
 
+    val isSigningUp: Boolean = false,
     val isSignedUp: Boolean = false,
     val signUpResponse: String = "",
 

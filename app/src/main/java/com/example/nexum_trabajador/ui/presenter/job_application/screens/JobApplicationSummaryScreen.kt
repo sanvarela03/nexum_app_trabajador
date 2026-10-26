@@ -1,7 +1,5 @@
 package com.example.nexum_trabajador.ui.presenter.job_application.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,11 +18,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.nexum_trabajador.data.job_application.remote.payload.req.AddMaterialReq
+import com.example.nexum_trabajador.data.job_application.remote.payload.req.AddTaskReq
+import com.example.nexum_trabajador.data.job_application.remote.payload.req.TimeRangeReq
+import com.example.nexum_trabajador.ui.presenter.job_application.JobApplicationState
 import com.example.nexum_trabajador.ui.presenter.job_application.JobApplicationViewModel
+import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JobApplicationSummaryScreen(
     viewModel: JobApplicationViewModel,
@@ -33,13 +37,27 @@ fun JobApplicationSummaryScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    val primaryGreen = Color(0xFF4A7D29)
-
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
             onSuccess()
         }
     }
+
+    JobApplicationSummaryScreenContent(
+        state = state,
+        onNavigateBack = onNavigateBack,
+        onSubmit = { viewModel.submitJobApplication() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun JobApplicationSummaryScreenContent(
+    state: JobApplicationState,
+    onNavigateBack: () -> Unit,
+    onSubmit: () -> Unit
+) {
+    val primaryGreen = Color(0xFF4A7D29)
 
     Scaffold(
         topBar = {
@@ -124,7 +142,7 @@ fun JobApplicationSummaryScreen(
                         color = primaryGreen
                     )
                     
-                    Divider(color = Color(0xFFEEEEEE))
+                    HorizontalDivider(color = Color(0xFFEEEEEE))
 
                     // Mano de Obra
                     Row(
@@ -140,7 +158,7 @@ fun JobApplicationSummaryScreen(
                             Text("Mano de obra", fontSize = 14.sp, color = Color.DarkGray)
                         }
                         Text(
-                            text = String.format("$%.2f", state.laborCost),
+                            text = String.format(Locale.getDefault(), "$%.2f", state.laborCost),
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = Color.Black
@@ -222,7 +240,7 @@ fun JobApplicationSummaryScreen(
                             color = primaryGreen
                         )
                     }
-                    Divider(color = Color(0xFFEEEEEE))
+                    HorizontalDivider(color = Color(0xFFEEEEEE))
                     Text(
                         text = state.proposalText,
                         fontSize = 14.sp,
@@ -250,7 +268,7 @@ fun JobApplicationSummaryScreen(
                             fontSize = 15.sp,
                             color = primaryGreen
                         )
-                        Divider(color = Color(0xFFEEEEEE))
+                        HorizontalDivider(color = Color(0xFFEEEEEE))
                         state.tasks.forEach { task ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -302,7 +320,7 @@ fun JobApplicationSummaryScreen(
                             fontSize = 15.sp,
                             color = primaryGreen
                         )
-                        Divider(color = Color(0xFFEEEEEE))
+                        HorizontalDivider(color = Color(0xFFEEEEEE))
                         state.materials.forEach { mat ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -322,7 +340,7 @@ fun JobApplicationSummaryScreen(
                                     )
                                 }
                                 Text(
-                                    text = String.format("$%.2f", mat.unitPrice * mat.quantity),
+                                    text = String.format(Locale.getDefault(), "$%.2f", mat.unitPrice * mat.quantity),
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 14.sp,
                                     color = Color.DarkGray
@@ -377,7 +395,7 @@ fun JobApplicationSummaryScreen(
             }
 
             Button(
-                onClick = { viewModel.submitApplication() },
+                onClick = onSubmit,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -399,5 +417,39 @@ fun JobApplicationSummaryScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun JobApplicationSummaryScreenPreview() {
+    val mockState = JobApplicationState(
+        laborCost = 150000.0,
+        workWarrantyInDays = 30,
+        estimatedTimeInMinutes = 120.0,
+        proposalText = "Esta es una propuesta detallada para la reparación de la fuga de agua en la cocina, incluyendo materiales de alta calidad y garantía extendida.",
+        tasks = listOf(
+            AddTaskReq("Desmontaje de tubería", "Se retirará la tubería dañada con cuidado."),
+            AddTaskReq("Instalación de repuesto", "Se instalará una nueva tubería de cobre."),
+            AddTaskReq("Pruebas de presión", "")
+        ),
+        materials = listOf(
+            AddMaterialReq("Tubo Cobre 1/2", "3 metros", "Insumo", 1, 45000.0),
+            AddMaterialReq("Soldadura estaño", "Rollo pequeño", "Consumible", 1, 12000.0)
+        ),
+        workSchedules = mapOf(
+            "2024-05-20" to listOf(
+                TimeRangeReq("08:00", "09:00"),
+                TimeRangeReq("09:00", "10:00")
+            )
+        )
+    )
+
+    Nexum_trabajadorTheme {
+        JobApplicationSummaryScreenContent(
+            state = mockState,
+            onNavigateBack = {},
+            onSubmit = {}
+        )
     }
 }

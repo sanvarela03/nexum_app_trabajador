@@ -1,8 +1,11 @@
 package com.example.nexum_trabajador.app
 
+import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,40 +18,28 @@ import com.example.nexum_trabajador.ui.navigation.rutes.AuthRoutes
 import com.example.nexum_trabajador.ui.presenter.home.HomeScreen
 import com.example.nexum_trabajador.ui.presenter.sign_up.SignUpViewModel
 import com.example.nexum_trabajador.ui.presenter.splash.SplashScreen
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filter
 
-import android.content.Intent
-import com.example.nexum_trabajador.ui.navigation.rutes.HomeRoutes
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WorkerApp(
     userAuthState: UserAuthState,
+    startDestination: AuthRoutes,
     initialIntent: Intent? = null,
     signUpViewModel: SignUpViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val isAuthenticated = userAuthState == UserAuthState.AUTHENTICATED
 
-
-    LaunchedEffect(userAuthState) {
-        snapshotFlow { userAuthState }
-            .drop(1)
-            .filter { it == UserAuthState.UNAUTHENTICATED }
-            .collect {
-                navController.navigate(Graph.InitialGraph) {
-                    popUpTo(navController.graph.id) {
-                        inclusive = true
-                    }
-                }
-            }
-    }
-
     NavHost(
         navController = navController,
-        startDestination = getStartDestination(userAuthState)
+        startDestination = when (userAuthState) {
+            UserAuthState.UNKNOWN -> AuthRoutes.SplashScreen
+            UserAuthState.UNAUTHENTICATED -> Graph.InitialGraph
+            UserAuthState.AUTHENTICATED -> AuthRoutes.HomeScreen
+        },
+        modifier = Modifier.fillMaxSize()
     ) {
-        authGraph(navController, signUpViewModel)
+        authGraph(navController, signUpViewModel, startDestination)
         protectedComposable<AuthRoutes.HomeScreen>(
             isAuthenticated = isAuthenticated,
             onUnauthorized = {
@@ -57,24 +48,12 @@ fun WorkerApp(
                         inclusive = true
                     }
                 }
-            }) {
+            }
+        ) {
             HomeScreen(initialIntent = initialIntent)
         }
-        composable<AuthRoutes.SplashScreen>() { SplashScreen(navController = navController) }
-    }
-}
-
-@Composable
-private fun getStartDestination(userAuthState: UserAuthState): Any = when (userAuthState) {
-    UserAuthState.UNKNOWN -> {
-        AuthRoutes.SplashScreen
-    }
-
-    UserAuthState.UNAUTHENTICATED -> {
-        Graph.InitialGraph
-    }
-
-    UserAuthState.AUTHENTICATED -> {
-        AuthRoutes.HomeScreen
+        composable<AuthRoutes.SplashScreen> {
+            SplashScreen(navController = navController)
+        }
     }
 }

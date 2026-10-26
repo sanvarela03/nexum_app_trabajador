@@ -10,6 +10,8 @@ import com.example.nexum_trabajador.data.global_payload.res.ApiResponse
 import com.example.nexum_trabajador.domain.use_cases.auth.AuthUseCases
 import com.example.nexum_trabajador.domain.use_cases.sign_in.SaveLastUserEmailUseCase
 import com.example.nexum_trabajador.domain.use_cases.worker.WorkerUseCases
+import com.example.nexum_trabajador.security.TokenManager
+import com.example.nexum_trabajador.domain.repository.JobOccupationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -23,18 +25,24 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val authUseCases: AuthUseCases,
     private val workerUseCases: WorkerUseCases,
-    private val saveLastUserEmailUseCase: SaveLastUserEmailUseCase
+    private val saveLastUserEmailUseCase: SaveLastUserEmailUseCase,
+    private val tokenManager: TokenManager,
+    private val jobOccupationRepository: JobOccupationRepository
 ) : ViewModel() {
 
     var state by mutableStateOf(HomeState())
     var signOutJob: Job? = null
     var getProducerJob: Job? = null
 
+    fun getUserId() = tokenManager.getUserId()
+    fun getUserIdSync(): Long? = tokenManager.getUserIdSync()
+
     init {
         Log.d("HomeViewModel", " init ")
         observeWorker()
         Log.d("HomeViewModel", " init 2")
         refreshWorker(fetchFromRemote = true)
+        loadOccupations()
     }
 
     private fun observeWorker() {
@@ -76,6 +84,55 @@ class HomeViewModel @Inject constructor(
             HomeEvent.DismissDialog -> {
                 state = state.copy(showDialog = false)
             }
+            is HomeEvent.ToggleAvailability -> {
+                toggleAvailability(event.isAvailable)
+            }
+        }
+    }
+
+    fun toggleAvailability(isAvailable: Boolean) {
+        val previousState = state.worker?.isAvailable ?: true
+        state = state.copy(
+            worker = state.worker?.copy(isAvailable = isAvailable),
+            isTogglingAvailability = true
+        )
+        viewModelScope.launch {
+            workerUseCases.setWorkerAvailability(isAvailable)
+                .catch { e ->
+                    Log.e("HomeViewModel", "Error actualizando disponibilidad: ${e.message}")
+                    state = state.copy(
+                        worker = state.worker?.copy(isAvailable = previousState),
+                        isTogglingAvailability = false,
+                        errorMessage = e.message ?: "Error al cambiar disponibilidad"
+                    )
+                }
+                .collect { response ->
+                    when (response) {
+                        is ApiResponse.Loading -> {
+                            state = state.copy(isTogglingAvailability = true)
+                        }
+                        is ApiResponse.Success -> {
+                            state = state.copy(
+                                isTogglingAvailability = false,
+                                worker = state.worker?.copy(isAvailable = response.data.isAvailable ?: isAvailable)
+                            )
+                        }
+                        is ApiResponse.Error -> {
+                            state = state.copy(
+                                worker = state.worker?.copy(isAvailable = previousState),
+                                isTogglingAvailability = false,
+                                errorMessage = response.errorMessage
+                            )
+                        }
+                        is ApiResponse.Failure -> {
+                            state = state.copy(
+                                worker = state.worker?.copy(isAvailable = previousState),
+                                isTogglingAvailability = false,
+                                errorMessage = response.errorMessage
+                            )
+                        }
+                    }
+                }
         }
     }
 
@@ -133,6 +190,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun refreshWorker(fetchFromRemote: Boolean) {
+        loadOccupations()
         viewModelScope.launch {
             workerUseCases.updateWorker(fetchFromRemote).catch {
                 Log.d("HomeViewModel", "Error actualizando trabajador: ${it.message}")
@@ -154,6 +212,32 @@ class HomeViewModel @Inject constructor(
                     is ApiResponse.Success -> {
                         state = state.copy(isRefreshing = false)
                     }
+                }
+            }
+        }
+    }
+
+    fun loadOccupations() {
+        viewModelScope.launch {
+            state = state.copy(isLoadingOccupations = true)
+            jobOccupationRepository.getMyOccupations().catch { e ->
+                Log.e("HomeViewModel", "Error cargando profesiones: ${e.message}")
+                state = state.copy(isLoadingOccupations = false)
+            }.collect { response ->
+                when (response) {
+                    is ApiResponse.Success -> {
+                        state = state.copy(
+                            isLoadingOccupations = false,
+                            occupations = response.data
+                        )
+                    }
+                    is ApiResponse.Error -> {
+                        state = state.copy(isLoadingOccupations = false)
+                    }
+                    is ApiResponse.Failure -> {
+                        state = state.copy(isLoadingOccupations = false)
+                    }
+                    else -> Unit
                 }
             }
         }

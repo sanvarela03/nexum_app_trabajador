@@ -38,6 +38,7 @@ places = "3.5.0"
 playServicesMaps = "19.0.0"
 foundation = "1.10.0"
 foundationVersion = "1.10.0"
+securityCrypto = "1.1.0-alpha06"
 
 
 [libraries]
@@ -91,6 +92,8 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 sandwich-ktor = { module = "com.github.skydoves:sandwich-ktor", version.ref = "sandwichKtor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4jSimple" }
 
 # Datastore
@@ -129,6 +132,9 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayoutCompose" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" }
+
+# EncryptedSharedPreferences
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

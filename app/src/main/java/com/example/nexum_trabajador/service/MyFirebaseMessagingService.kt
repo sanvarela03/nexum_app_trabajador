@@ -11,7 +11,6 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.nexum_trabajador.MainActivity
 import com.example.nexum_trabajador.R
-import com.example.nexum_trabajador.data.notification.local.NotificationEntity
 import com.example.nexum_trabajador.domain.use_cases.notification.NotificationUseCases
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -19,8 +18,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +27,12 @@ import javax.inject.Singleton
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var notificationsUseCases: NotificationUseCases
+
+    @Inject
+    lateinit var updateFcmTokenUseCase: com.example.nexum_trabajador.domain.use_cases.user.UpdateFcmTokenUseCase
+
+    @Inject
+    lateinit var tokenManager: com.example.nexum_trabajador.security.TokenManager
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onMessageReceived(message: RemoteMessage) {
@@ -42,62 +45,41 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             Log.v(TAG, "| Llave : $key | Valor: $value |")
         }
 
-        val title = message.notification?.title ?: message.data["title"]
-        val body = message.notification?.body ?: message.data["body"]
-        
-        val type = message.data["type"]
-        val jobOfferUuid = message.data["jobOfferUuid"]
-        val clientName = message.data["clientName"]
-        val clientImageUrl = message.data["clientImageUrl"]
-        val jobOfferTitle = message.data["jobOfferTitle"]
-        val requiredDate = message.data["requiredDate"]
-        val locationName = message.data["locationName"]
-        val categoryName = message.data["categoryName"]
-        val serviceType = message.data["serviceType"]
+        val notification = NotificationDataMapper.toNotificationEntity(message)
 
-        if (title != null && body != null) {
-            val current = LocalDateTime.now()
-            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a")
-            val formatted = current.format(formatter)
-            val notification = NotificationEntity(
-                title = title,
-                body = body,
-                createdAt = formatted,
-                type = type,
-                jobOfferUuid = jobOfferUuid,
-                clientName = clientName,
-                clientImageUrl = clientImageUrl,
-                jobOfferTitle = jobOfferTitle,
-                requiredDate = requiredDate,
-                locationName = locationName,
-                categoryName = categoryName,
-                serviceType = serviceType
-            )
+        if (notification != null) {
             CoroutineScope(Dispatchers.IO).launch {
                 notificationsUseCases.saveNotification(notification)
             }
         }
-        showNotification(message, title, body)
+
+        showNotification(message, notification?.title, notification?.body)
     }
 
 
     override fun onNewToken(token: String) {
         Log.v(TAG, "Refreshed firebase_token: $token")
         super.onNewToken(token)
-//        CoroutineScope(Dispatchers.IO).launch {
-//            producerUseCases.updateFirebaseToken(token)
-//        }
+        if (tokenManager.getAccessTokenSync() != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    updateFcmTokenUseCase(token).collect { response ->
+                        Log.d(TAG, "FCM token synced to backend: $response")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error syncing refreshed FCM token", e)
+                }
+            }
+        }
     }
 
     private fun showNotification(message: RemoteMessage, title: String?, body: String?) {
         val channelId = "Default"
         val channelName = "Default Channel"
 
-        // Crear un NotificationManager
         val notificationManager =
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        // Crear un canal de notificación (necesario para Android Oreo y versiones posteriores)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
@@ -107,19 +89,26 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Intentar abrir tu actividad cuando se haga clic en la notificación
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val notificationId = message.data["jobOfferId"]?.toIntOrNull()
+            ?: message.data["contractId"]?.toIntOrNull()
+            ?: (System.currentTimeMillis() % 100000).toInt()
 
-        // Extraer payload si viene del backend
-        message.data["type"]?.let { intent.putExtra("type", it) }
-        message.data["jobOfferUuid"]?.let { intent.putExtra("jobOfferUuid", it) }
-        message.data["jobOfferId"]?.let { intent.putExtra("jobOfferId", it) }
+        // Intentar abrir MainActivity cuando se haga clic en la notificación
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            // Extraer payload si viene del backend
+            message.data["type"]?.let { putExtra("type", it) }
+            message.data["jobOfferUuid"]?.let { putExtra("jobOfferUuid", it) }
+            message.data["jobOfferId"]?.let { putExtra("jobOfferId", it) }
+            message.data["contractId"]?.let { putExtra("contractId", it) }
+        }
 
         // Crear PendingIntent para la actividad principal
         val pendingIntent = PendingIntent.getActivity(
-            this, 0 /* Request code */, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            this,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // Intentar realizar alguna acción cuando se hagan clic en los botones
@@ -135,17 +124,17 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
-        // Construir la notificación con botones
+        // Construir la notificación
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.nexum_logo_2)
             .setContentTitle(title ?: "No tiene titulo")
             .setSound(defaultSoundUri)
             .setContentText(body ?: "No tiene cuerpo")
             .setContentIntent(pendingIntent)
-
+            .setAutoCancel(true)
 
         // Mostrar la notificación
-        notificationManager.notify(0, notificationBuilder.build())
+        notificationManager.notify(notificationId, notificationBuilder.build())
     }
 
     companion object {

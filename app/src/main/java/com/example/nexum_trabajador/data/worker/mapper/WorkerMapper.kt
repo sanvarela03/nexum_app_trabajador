@@ -27,7 +27,8 @@ object WorkerMapper : EntityMapper<WorkerRes, WorkerEntity>, DomainMapper<Worker
             profileVerified = dto.profileVerified,
             latitude = dto.latitude,
             longitude = dto.longitude,
-            bio = dto.workerBio
+            bio = dto.workerBio,
+            isAvailable = dto.isAvailable ?: true
         )
         return workerEntity
     }
@@ -50,7 +51,8 @@ object WorkerMapper : EntityMapper<WorkerRes, WorkerEntity>, DomainMapper<Worker
             firebaseToken = entity.firebaseToken,
             latitude = entity.latitude,
             longitude = entity.longitude,
-            bio = entity.bio ?: ""
+            bio = entity.bio ?: "",
+            isAvailable = entity.isAvailable
         )
     }
 
@@ -60,6 +62,7 @@ object WorkerMapper : EntityMapper<WorkerRes, WorkerEntity>, DomainMapper<Worker
             bio = worker.bio,
             latitude = worker.latitude ?: 0.0,
             longitude = worker.longitude ?: 0.0,
+            isAvailable = worker.isAvailable
         )
     }
 }

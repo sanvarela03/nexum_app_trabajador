@@ -32,14 +32,13 @@ import java.util.Locale
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── Horario laboral configurable ──────────────────────────────────────────────
-// Cambia estos valores para definir el rango de horas laborables.
-// Horas fuera de este rango se mostrarán en rojo y no serán seleccionables.
-//   WORK_START_HOUR : primera hora SELECCIONABLE (inclusive)  — ej: 7 = 7:00 AM
-//   WORK_END_HOUR   : primera hora NO seleccionable (exclusive) — ej: 20 = 8:00 PM
+//    Cambia estos valores para definir el rango de horas laborables.
+//    Horas fuera de este rango se mostrarán en rojo y no serán seleccionables.
+//    WORK_START_HOUR : primera hora SELECCIONABLE (inclusive)  — ej: 7 = 7:00 AM
+//    WORK_END_HOUR   : primera hora NO seleccionable (exclusive) — ej: 20 = 8:00 PM
 // ─────────────────────────────────────────────────────────────────────────────
 private const val WORK_START_HOUR = 7   // 7 AM
 private const val WORK_END_HOUR   = 20  // 8 PM  (la franja 19:00–20:00 es la última)
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)

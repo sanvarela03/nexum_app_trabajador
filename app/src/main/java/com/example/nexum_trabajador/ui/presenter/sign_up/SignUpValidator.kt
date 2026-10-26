@@ -7,28 +7,28 @@ import com.example.nexum_trabajador.domain.model.MarketLocation
 import com.example.nexum_trabajador.ui.common.ValidationResult
 
 object SignUpValidator {
+
+    private const val MIN_EMAIL_LENGTH = 3
+    private const val MAX_EMAIL_LENGTH = 254
+    private const val MIN_PASSWORD_LENGTH = 5
+    private const val MIN_USER_LENGTH = 4
+    private const val MAX_USER_LENGTH = 20
+    private val emailRegex = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+
     fun validateEmail(email: String?): ValidationResult {
-        if (email.isNullOrEmpty()) {
-            return ValidationResult(false, "Email cannot be empty.")
+        if (email.isNullOrBlank()) {
+            return ValidationResult(false, "El correo no puede estar vacío.")
         }
-
-        val emailRegex = Regex("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
-
-
-        val isValid = emailRegex.matches(email) && email.length >= 4 && email.length <= 20
-
-        val errorMessage = when {
-            !emailRegex.matches(email) -> "Invalid email format."
-            email.length < 4 -> "Email is too short (minimum 4 characters)."
-            email.length > 20 -> "Email is too long (maximum 19 characters)."
-            else -> ""
+        return when {
+            email.length < MIN_EMAIL_LENGTH -> ValidationResult(false, "El correo es muy corto.")
+            email.length > MAX_EMAIL_LENGTH -> ValidationResult(false, "El correo es muy largo.")
+            !emailRegex.matches(email) -> ValidationResult(false, "Formato de correo inválido.")
+            else -> ValidationResult(true)
         }
-
-        return ValidationResult(isValid, errorMessage)
     }
 
     fun validatePassword(password: String?): ValidationResult = ValidationResult(
-        (!password.isNullOrEmpty() && password.length >= 4)
+        (!password.isNullOrEmpty() && password.length >= MIN_PASSWORD_LENGTH)
     )
 
     fun validateName(name: String?): ValidationResult = ValidationResult(
@@ -44,7 +44,6 @@ object SignUpValidator {
     )
 
     fun validateCellphone(phone: String, country: Country?): ValidationResult {
-
         Log.d(
             "SignUpValidator",
             "Validating cellphone: $phone, Regex: ${country?.phoneCheckRegex}"
@@ -60,9 +59,8 @@ object SignUpValidator {
 
         if (phone.isNullOrBlank() && country == null) return ValidationResult(
             false,
-            "El el codigo y el numero no pueden estar vacios"
+            "El código y el número no pueden estar vacíos"
         )
-
 
         val digits = phone.filter { it.isDigit() }
 
@@ -76,7 +74,7 @@ object SignUpValidator {
         )
 
         Log.d("SignUpValidator", "Rule: ${rule}")
-        Log.d("SignUpValidator", "Validating cellphone matchces: ${!rule.matches(digits)}")
+        Log.d("SignUpValidator", "Validating cellphone matches: ${!rule.matches(digits)}")
         if (!rule.matches(digits)) {
             val msg = when (country?.phoneCode) {
                 "+57" -> "Colombia: debe ser móvil que empiece en 3 y tenga 10 dígitos"
@@ -110,9 +108,10 @@ object SignUpValidator {
         return ValidationResult(isValid)
     }
 
-    fun validateConfirmPassword(confirmPassword: String?, password: String?): ValidationResult = ValidationResult(
-        confirmPassword == password
-    )
+    fun validateConfirmPassword(confirmPassword: String?, password: String?): ValidationResult =
+        ValidationResult(
+            confirmPassword == password
+        )
 
     fun validateDocumentUri(documentUri: String?): ValidationResult {
         val isValid = !documentUri.isNullOrEmpty()
@@ -126,5 +125,4 @@ object SignUpValidator {
     fun validateProfilePictureUrl(profilePictureUrl: String?): ValidationResult = ValidationResult(
         !profilePictureUrl.isNullOrEmpty()
     )
-
 }

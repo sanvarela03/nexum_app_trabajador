@@ -4,9 +4,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.nexum_trabajador.ui.navigation.rutes.DrawerRoutes
 
@@ -33,6 +37,22 @@ enum class DrawerNavigation(
         icon = Icons.Outlined.AccountCircle,
         selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle,
+    ),
+    OCCUPATIONS(
+        title = "Mis Profesiones",
+        description = "Home",
+        route = DrawerRoutes.OccupationsScreen,
+        icon = Icons.Outlined.WorkOutline,
+        selectedIcon = Icons.Filled.Work,
+        unselectedIcon = Icons.Outlined.WorkOutline,
+    ),
+    INSURANCES(
+        title = "Mis Seguros y Pólizas",
+        description = "Home",
+        route = DrawerRoutes.InsurancesScreen,
+        icon = Icons.Outlined.Shield,
+        selectedIcon = Icons.Filled.Shield,
+        unselectedIcon = Icons.Outlined.Shield,
     ),
     ADDRESS(
         title = "Ubicación de trabajo",

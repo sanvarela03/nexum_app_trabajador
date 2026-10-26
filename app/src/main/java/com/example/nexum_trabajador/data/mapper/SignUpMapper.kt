@@ -32,6 +32,8 @@ class SignUpMapper @Inject constructor() {
                 profileImageUrl = state.profilePictureUrl,
                 frontDocumentUrl = state.frontDocumentUrl,
                 backDocumentUrl = state.backDocumentUrl,
+                documentNumber = state.documentNumber,
+                documentType = "CC",
             )
         )
     }

@@ -17,4 +17,5 @@ sealed class HomeEvent {
     object Refresh : HomeEvent()
     object UpdateWorkerDetails : HomeEvent()
     object DismissDialog : HomeEvent()
+    data class ToggleAvailability(val isAvailable: Boolean) : HomeEvent()
 }

@@ -18,5 +18,6 @@ data class Worker(
     val lastLogin: String,
     val latitude: Double?,
     val longitude: Double?,
-    val address: String = "Sin dirección"
+    val address: String = "Sin dirección",
+    val isAvailable: Boolean = true
 )

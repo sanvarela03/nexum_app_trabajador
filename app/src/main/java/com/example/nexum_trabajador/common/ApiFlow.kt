@@ -23,13 +23,20 @@ fun <T> apiRequestFlow(
                     emit(ApiResponse.Success(data))
                 }
             } else {
-                response.errorBody()?.let { error ->
-                    error.close()
-                    val parsedError: ErrorResponse =
-                        Gson().fromJson(error.charStream(), ErrorResponse::class.java)
-
-                    emit(ApiResponse.Failure(parsedError.message, parsedError.status))
+                val error = response.errorBody()
+                val errorString = try { error?.string().orEmpty() } catch (e: Exception) { "" }
+                val parsedError = try {
+                    Gson().fromJson(errorString, ErrorResponse::class.java)
+                } catch (e: Exception) {
+                    null
                 }
+                val msg = parsedError?.message?.takeIf { it.isNotBlank() }
+                    ?: parsedError?.error?.takeIf { it.isNotBlank() }
+                    ?: errorString.takeIf { it.isNotBlank() }
+                    ?: "Error en la solicitud (${response.code()})"
+                val status = parsedError?.status ?: response.code()
+
+                emit(ApiResponse.Failure(msg, status))
             }
         } catch (e: Exception) {
             emit(ApiResponse.Failure(e.message ?: e.toString(), 400))

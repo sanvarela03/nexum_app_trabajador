@@ -30,7 +30,8 @@ import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
 @Composable
 fun SignUpUserDataScreen(
     viewModel: SignUpViewModel,
-    go: (Any) -> Unit = {}
+    go: (Any) -> Unit = {},
+    onBack: () -> Boolean = { true }
 ) {
     val state = viewModel.state
 
@@ -44,16 +45,12 @@ fun SignUpUserDataScreen(
         lastNameChanged = {
             viewModel.onEvent(SignUpEvent.LastNameChanged(it))
         },
-        onNextClicked = {
+        onNext = {
             go(AuthRoutes.SignUpCellphoneScreen)
         },
-        onBackClicked = {
-            go(AuthRoutes.SignUpScreen)
-        },
+        onBack = { onBack() },
         enableNextButton = state.isUserDataValid
-
     )
-
 }
 
 @Composable
@@ -62,8 +59,8 @@ private fun SignUpUserDataScreenContent(
     state: SignUpState = SignUpState(),
     nameChanged: (String) -> Unit = {},
     lastNameChanged: (String) -> Unit = {},
-    onNextClicked: () -> Unit = {},
-    onBackClicked: () -> Unit = {},
+    onNext: () -> Unit = {},
+    onBack: () -> Unit = {},
     enableNextButton: Boolean = false,
 ) {
     Nexum_trabajadorTheme {
@@ -72,19 +69,17 @@ private fun SignUpUserDataScreenContent(
                 .fillMaxSize()
                 .padding(
                     start = 20.dp,
-                    top = 80.dp,    // ↑ increase this value
+                    top = 80.dp,
                     end = 20.dp,
                     bottom = 20.dp
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
-        )
-        {
+        ) {
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
-            )
-            {
+            ) {
                 Text(
                     "¿Cómo te llamas?",
                     fontWeight = FontWeight.SemiBold,
@@ -104,7 +99,6 @@ private fun SignUpUserDataScreenContent(
                     textValue = state.name,
                     onTextSelected = {
                         nameChanged(it)
-//                    viewModel.onEvent(SignUpEvent.NameChanged(it))
                     },
                     errorStatus = state.nameError
                 )
@@ -120,21 +114,17 @@ private fun SignUpUserDataScreenContent(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     onTextSelected = {
                         lastNameChanged(it)
-//                    viewModel.onEvent(SignUpEvent.LastNameChanged(it))
                     },
                     errorStatus = state.lastNameError
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 PagerNavigationComponent(
                     onBack = {
-                        onBackClicked()
-//                    go(AuthRoutes.SignUpScreen)
+                        onBack()
                     },
                     onNext = {
-                        onNextClicked()
-//                    go(AuthRoutes.SignUpCellphoneScreen)
+                        onNext()
                     },
-//                enableNextButton = viewModel.state.nameError && viewModel.state.lastNameError
                     enableNextButton = enableNextButton
                 )
             }

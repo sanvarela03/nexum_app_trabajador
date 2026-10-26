@@ -27,4 +27,6 @@ class WorkerRemoteDataSource @Inject constructor(
     fun updateWorkerDetails(req: UpdateWorkerReq): Flow<ApiResponse<MessageRes>> =
         apiRequestFlow { api.updateWorkerDetails(req) }
 
+    fun setAvailability(available: Boolean): Flow<ApiResponse<WorkerRes>> =
+        apiRequestFlow { api.setAvailability(available) }
 }

@@ -103,6 +103,8 @@ dependencies {
     implementation(libs.sandwich.ktor)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.websockets)
+    implementation(libs.ktor.client.android)
     implementation(libs.slf4j.simple)
 
     // Retrofit
@@ -148,4 +150,7 @@ dependencies {
     // Constraint layout
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.constraintlayout.compose)
+
+    // EncryptedSharedPreferences
+    implementation(libs.androidx.security.crypto)
 }

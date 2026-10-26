@@ -11,4 +11,5 @@ interface WorkerRepository {
     fun update(fetchFromRemote: Boolean): Flow<ApiResponse<Unit>>
     fun observe(): Flow<Worker?>
     fun updateWorkerDetails(worker: Worker): Flow<ApiResponse<MessageRes>>
+    fun setAvailability(available: Boolean): Flow<ApiResponse<com.example.nexum_trabajador.data.worker.remote.payload.res.WorkerRes>>
 }

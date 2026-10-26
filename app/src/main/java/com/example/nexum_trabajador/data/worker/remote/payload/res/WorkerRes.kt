@@ -11,5 +11,6 @@ data class WorkerRes(
     val workerBio: String,
     val user: UserRes,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
+    val isAvailable: Boolean? = true
 )
