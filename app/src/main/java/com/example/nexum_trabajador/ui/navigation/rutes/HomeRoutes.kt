@@ -43,7 +43,14 @@ sealed class HomeRoutes {
     data class JobOfferDetailsScreen(val uuid: String) : HomeRoutes()
 
     @Serializable
-    data class JobApplicationGraph(val jobOfferId: Long, val jobOfferUuid: String, val jobOfferTitle: String = "") : HomeRoutes() {
+    data class JobApplicationGraph(
+        val jobOfferId: Long,
+        val jobOfferUuid: String,
+        val jobOfferTitle: String = "",
+        val clientRequiredDate: String = "",
+        val serviceType: String = "",
+        val categoryName: String = ""
+    ) : HomeRoutes() {
         @Serializable
         object ProposalScreen
         @Serializable

@@ -28,6 +28,7 @@ import com.example.nexum_trabajador.ui.presenter.job_application.JobApplicationS
 import com.example.nexum_trabajador.ui.presenter.job_application.JobApplicationViewModel
 import com.example.nexum_trabajador.ui.theme.Nexum_trabajadorTheme
 import java.util.Locale
+import com.example.nexum_trabajador.ui.presenter.job_application.components.JobApplicationStatusDialog
 
 @Composable
 fun JobApplicationSummaryScreen(
@@ -37,16 +38,20 @@ fun JobApplicationSummaryScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) {
-            onSuccess()
-        }
-    }
-
     JobApplicationSummaryScreenContent(
         state = state,
         onNavigateBack = onNavigateBack,
-        onSubmit = { viewModel.submitJobApplication() }
+        onSubmit = { viewModel.submitJobApplication() },
+        onAcceptSuccess = {
+            viewModel.resetSubmissionState()
+            onSuccess()
+        },
+        onRetry = {
+            viewModel.submitJobApplication(isRetry = true)
+        },
+        onDismissError = {
+            viewModel.dismissError()
+        }
     )
 }
 
@@ -55,7 +60,10 @@ fun JobApplicationSummaryScreen(
 private fun JobApplicationSummaryScreenContent(
     state: JobApplicationState,
     onNavigateBack: () -> Unit,
-    onSubmit: () -> Unit
+    onSubmit: () -> Unit,
+    onAcceptSuccess: () -> Unit = {},
+    onRetry: () -> Unit = {},
+    onDismissError: () -> Unit = {}
 ) {
     val primaryGreen = Color(0xFF4A7D29)
 
@@ -158,7 +166,7 @@ private fun JobApplicationSummaryScreenContent(
                             Text("Mano de obra", fontSize = 14.sp, color = Color.DarkGray)
                         }
                         Text(
-                            text = String.format(Locale.getDefault(), "$%.2f", state.laborCost),
+                            text = "$ ${state.laborCost.toLong()}",
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp,
                             color = Color.Black
@@ -340,7 +348,7 @@ private fun JobApplicationSummaryScreenContent(
                                     )
                                 }
                                 Text(
-                                    text = String.format(Locale.getDefault(), "$%.2f", mat.unitPrice * mat.quantity),
+                                    text = "$ ${(mat.unitPrice * mat.quantity).toLong()}",
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 14.sp,
                                     color = Color.DarkGray
@@ -418,6 +426,18 @@ private fun JobApplicationSummaryScreenContent(
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
+
+    JobApplicationStatusDialog(
+        isSubmitting = state.isSubmitting,
+        isSuccess = state.isSuccess,
+        errorMessage = state.errorMessage,
+        retryCount = state.retryCount,
+        maxRetries = state.maxRetries,
+        onAcceptSuccess = onAcceptSuccess,
+        onRetry = onRetry,
+        onDismissError = onDismissError,
+        primaryColor = primaryGreen
+    )
 }
 
 @Preview(showBackground = true)

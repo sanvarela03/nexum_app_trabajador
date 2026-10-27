@@ -46,6 +46,9 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/colorText" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="job_offers_high_importance_channel" />
 
         <receiver
             android:name=".service.AcceptBroadcastReceiver"

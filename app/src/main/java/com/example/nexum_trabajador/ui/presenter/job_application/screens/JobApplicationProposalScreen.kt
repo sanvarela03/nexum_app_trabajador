@@ -36,13 +36,13 @@ fun JobApplicationProposalScreen(
     val state by viewModel.state.collectAsState()
 
     var proposalText by remember { mutableStateOf(state.proposalText) }
-    var laborCost by remember { mutableStateOf(if (state.laborCost == 0.0) "" else state.laborCost.toString()) }
+    var laborCost by remember { mutableStateOf(if (state.laborCost == 0.0) "" else state.laborCost.toLong().toString()) }
     var warrantyDays by remember { mutableStateOf(if (state.workWarrantyInDays == 0) "" else state.workWarrantyInDays.toString()) }
     var showProposalPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.proposalText, state.laborCost, state.workWarrantyInDays) {
         proposalText = state.proposalText
-        laborCost = if (state.laborCost == 0.0) "" else state.laborCost.toString()
+        laborCost = if (state.laborCost == 0.0) "" else state.laborCost.toLong().toString()
         warrantyDays = if (state.workWarrantyInDays == 0) "" else state.workWarrantyInDays.toString()
     }
 
@@ -227,9 +227,11 @@ fun JobApplicationProposalScreen(
                     // Mano de Obra
                     OutlinedTextField(
                         value = laborCost,
-                        onValueChange = { laborCost = it },
+                        onValueChange = { input ->
+                            laborCost = input.filter { it.isDigit() }
+                        },
                         label = { Text("Costo de mano de obra") },
-                        placeholder = { Text("0.00") },
+                        placeholder = { Text("0") },
                         leadingIcon = { Icon(Icons.Filled.AttachMoney, contentDescription = null, tint = primaryGreen) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -245,7 +247,9 @@ fun JobApplicationProposalScreen(
                     // Garantía
                     OutlinedTextField(
                         value = warrantyDays,
-                        onValueChange = { warrantyDays = it },
+                        onValueChange = { input ->
+                            warrantyDays = input.filter { it.isDigit() }
+                        },
                         label = { Text("Garantía del trabajo (días)") },
                         placeholder = { Text("Ej: 30") },
                         leadingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = primaryGreen) },

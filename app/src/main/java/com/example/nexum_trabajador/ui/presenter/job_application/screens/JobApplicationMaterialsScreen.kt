@@ -130,7 +130,7 @@ fun JobApplicationMaterialsScreen(
             ) {
                 Text("Total:", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Text(
-                    text = "$ ${totalCost.toInt()}",
+                    text = "$ ${totalCost.toLong()}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = Color.Gray
@@ -246,7 +246,7 @@ fun JobApplicationMaterialsScreen(
             AddMaterialDialog(
                 initialName = mat.name,
                 initialQuantity = mat.quantity.toString(),
-                initialPrice = mat.unitPrice.toString(),
+                initialPrice = mat.unitPrice.toLong().toString(),
                 initialDesc = mat.description,
                 initialType = mat.type,
                 onDismiss = { editingIndex = null },
@@ -362,7 +362,7 @@ fun MaterialItemCard(material: AddMaterialReq, onDelete: () -> Unit, onEdit: () 
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Precio/U : $ ${material.unitPrice.toInt()}",
+                    text = "Precio/U : $ ${material.unitPrice.toLong()}",
                     fontSize = 14.sp,
                     color = Color.Gray,
                     modifier = Modifier.weight(1f)
@@ -392,7 +392,7 @@ fun MaterialItemCard(material: AddMaterialReq, onDelete: () -> Unit, onEdit: () 
                 )
 
                 Text(
-                    text = "$ ${(material.unitPrice * material.quantity).toInt()}",
+                    text = "$ ${(material.unitPrice * material.quantity).toLong()}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                     color = Color.Black,
@@ -416,8 +416,8 @@ fun AddMaterialDialog(
     onConfirm: (String, Int, Double, String, String) -> Unit
 ) {
     var name by remember { mutableStateOf(initialName) }
-    var quantity by remember { mutableStateOf(initialQuantity) }
-    var price by remember { mutableStateOf(initialPrice) }
+    var quantity by remember { mutableStateOf(initialQuantity.filter { it.isDigit() }) }
+    var price by remember { mutableStateOf(initialPrice.filter { it.isDigit() }) }
     var type by remember { mutableStateOf(initialType) }
     var desc by remember { mutableStateOf(initialDesc) }
     var expandedType by remember { mutableStateOf(false) }
@@ -464,7 +464,9 @@ fun AddMaterialDialog(
                         Text("Cantidad", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         OutlinedTextField(
                             value = quantity,
-                            onValueChange = { quantity = it },
+                            onValueChange = { input ->
+                                quantity = input.filter { it.isDigit() }
+                            },
                             placeholder = { Text("Ingresar cantidad") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.fillMaxWidth(),
@@ -527,8 +529,10 @@ fun AddMaterialDialog(
                     Text("Precio", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     OutlinedTextField(
                         value = price,
-                        onValueChange = { price = it },
-                        placeholder = { Text("Ingresar precio.") },
+                        onValueChange = { input ->
+                            price = input.filter { it.isDigit() }
+                        },
+                        placeholder = { Text("0") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),

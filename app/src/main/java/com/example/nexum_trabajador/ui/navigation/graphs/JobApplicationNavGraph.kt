@@ -26,7 +26,14 @@ fun NavGraphBuilder.jobApplicationGraph(
             }
             val viewModel: JobApplicationViewModel = hiltViewModel(parentEntry)
             val args = parentEntry.toRoute<HomeRoutes.JobApplicationGraph>()
-            viewModel.init(args.jobOfferId, args.jobOfferUuid, args.jobOfferTitle)
+            viewModel.init(
+                args.jobOfferId,
+                args.jobOfferUuid,
+                args.jobOfferTitle,
+                args.clientRequiredDate,
+                args.serviceType,
+                args.categoryName
+            )
             
             JobApplicationProposalScreen(
                 viewModel = viewModel,

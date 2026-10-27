@@ -20,7 +20,15 @@ class JobApplicationRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception(response.message() ?: "Error al enviar la aplicación"))
+                val errorString = try { response.errorBody()?.string().orEmpty() } catch (_: Exception) { "" }
+                val messageFromJson = try {
+                    org.json.JSONObject(errorString).optString("message").takeIf { it.isNotBlank() }
+                } catch (_: Exception) { null }
+                val msg = messageFromJson
+                    ?: errorString.takeIf { it.isNotBlank() && !it.startsWith("{") }
+                    ?: response.message()
+                    ?: "Error al enviar la aplicación"
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -142,12 +142,15 @@ fun NavGraphBuilder.homeGraph(
             JobOfferDetailsScreen(
                 uuid = args.uuid,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToApplication = { jobOfferId, jobOfferUuid, jobOfferTitle ->
+                onNavigateToApplication = { jobOfferId, jobOfferUuid, jobOfferTitle, clientRequiredDate, serviceType, categoryName ->
                     navController.navigate(
                         HomeRoutes.JobApplicationGraph(
                             jobOfferId = jobOfferId,
                             jobOfferUuid = jobOfferUuid,
-                            jobOfferTitle = jobOfferTitle
+                            jobOfferTitle = jobOfferTitle,
+                            clientRequiredDate = clientRequiredDate,
+                            serviceType = serviceType,
+                            categoryName = categoryName
                         )
                     )
                 }

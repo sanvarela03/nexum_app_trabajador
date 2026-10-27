@@ -309,7 +309,7 @@ private fun ProposalCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "$${String.format(java.util.Locale.US, "%,.2f", proposal.laborCost)}",
+                        text = "$ ${proposal.laborCost.toLong()}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = Color(0xFF1E293B)

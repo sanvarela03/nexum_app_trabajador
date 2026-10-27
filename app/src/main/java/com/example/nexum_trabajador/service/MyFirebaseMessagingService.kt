@@ -74,8 +74,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
     private fun showNotification(message: RemoteMessage, title: String?, body: String?) {
-        val channelId = "Default"
-        val channelName = "Default Channel"
+        val isJobOffer = (title?.contains("Nueva oferta de trabajo", ignoreCase = true) == true) ||
+                (message.data["type"] == "NEW_JOB_OFFER") ||
+                (message.data["title"]?.contains("Nueva oferta de trabajo", ignoreCase = true) == true) ||
+                (message.notification?.title?.contains("Nueva oferta de trabajo", ignoreCase = true) == true)
+
+        val channelId = if (isJobOffer) CHANNEL_HIGH_IMPORTANCE_ID else CHANNEL_DEFAULT_ID
+        val channelName = if (isJobOffer) CHANNEL_HIGH_IMPORTANCE_NAME else CHANNEL_DEFAULT_NAME
+        val importance = if (isJobOffer) NotificationManager.IMPORTANCE_HIGH else NotificationManager.IMPORTANCE_DEFAULT
 
         val notificationManager =
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -84,8 +90,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 channelId,
                 channelName,
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
+                importance
+            ).apply {
+                if (isJobOffer) {
+                    description = "Notificaciones de alta prioridad para nuevas ofertas de trabajo cercanas"
+                    enableVibration(true)
+                    vibrationPattern = longArrayOf(0, 300, 200, 300)
+                    enableLights(true)
+                    lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+                } else {
+                    description = "Notificaciones generales de Nexum"
+                }
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
@@ -127,11 +143,23 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Construir la notificación
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.nexum_logo_2)
-            .setContentTitle(title ?: "No tiene titulo")
-            .setSound(defaultSoundUri)
+            .setContentTitle(title ?: if (isJobOffer) "Nueva oferta de trabajo cerca de ti" else "No tiene titulo")
             .setContentText(body ?: "No tiene cuerpo")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body ?: "No tiene cuerpo"))
+            .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
+
+        if (isJobOffer) {
+            notificationBuilder
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_EVENT)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVibrate(longArrayOf(0, 300, 200, 300))
+        } else {
+            notificationBuilder
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        }
 
         // Mostrar la notificación
         notificationManager.notify(notificationId, notificationBuilder.build())
@@ -139,5 +167,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         private const val TAG = "MyFirebaseMessagingService"
+        const val CHANNEL_HIGH_IMPORTANCE_ID = "job_offers_high_importance_channel"
+        const val CHANNEL_HIGH_IMPORTANCE_NAME = "Ofertas de Trabajo"
+        const val CHANNEL_DEFAULT_ID = "Default"
+        const val CHANNEL_DEFAULT_NAME = "General"
     }
 }

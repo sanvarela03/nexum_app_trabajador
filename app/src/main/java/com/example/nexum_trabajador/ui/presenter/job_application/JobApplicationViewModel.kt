@@ -23,10 +23,16 @@ import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+const val DEFAULT_MAX_RETRIES = 5
+
 data class JobApplicationState(
     val jobOfferId: Long = 0,
     val jobOfferUuid: String = "",
     val jobOfferTitle: String = "",
+    val clientRequiredDate: String = "",
+    val serviceType: String = "",
+    val categoryName: String = "",
+    val is24Hours: Boolean = false,
     val scheduledDate: String = "",
     val estimatedTimeInMinutes: Double = 0.0,
     val laborCost: Double = 0.0,
@@ -41,7 +47,9 @@ data class JobApplicationState(
     
     val isSubmitting: Boolean = false,
     val isSuccess: Boolean = false,
-    val errorMessage: String = ""
+    val errorMessage: String = "",
+    val retryCount: Int = 0,
+    val maxRetries: Int = DEFAULT_MAX_RETRIES
 )
 
 @HiltViewModel
@@ -56,15 +64,34 @@ class JobApplicationViewModel @Inject constructor(
     private val _state = MutableStateFlow(JobApplicationState())
     val state: StateFlow<JobApplicationState> = _state.asStateFlow()
 
-    fun init(jobOfferId: Long, jobOfferUuid: String, jobOfferTitle: String = "") {
-        if (_state.value.jobOfferId == 0L) {
-            _state.update {
-                it.copy(
-                    jobOfferId = jobOfferId,
-                    jobOfferUuid = jobOfferUuid,
-                    jobOfferTitle = jobOfferTitle
-                )
-            }
+    fun init(
+        jobOfferId: Long,
+        jobOfferUuid: String,
+        jobOfferTitle: String = "",
+        clientRequiredDate: String = "",
+        serviceType: String = "",
+        categoryName: String = ""
+    ) {
+        val isFirstInit = _state.value.jobOfferId == 0L
+        val resolvedServiceType = if (serviceType.isNotBlank()) serviceType else _state.value.serviceType
+        val resolvedCategoryName = if (categoryName.isNotBlank()) categoryName else _state.value.categoryName
+        val is24H = resolvedServiceType.contains("24", ignoreCase = true) ||
+                    resolvedCategoryName.contains("24", ignoreCase = true) ||
+                    jobOfferTitle.contains("24 horas", ignoreCase = true) ||
+                    jobOfferTitle.contains("24h", ignoreCase = true)
+
+        _state.update {
+            it.copy(
+                jobOfferId = jobOfferId,
+                jobOfferUuid = jobOfferUuid,
+                jobOfferTitle = jobOfferTitle,
+                clientRequiredDate = if (clientRequiredDate.isNotBlank()) clientRequiredDate else it.clientRequiredDate,
+                serviceType = resolvedServiceType,
+                categoryName = resolvedCategoryName,
+                is24Hours = is24H
+            )
+        }
+        if (isFirstInit) {
             loadDraft(jobOfferId)
             loadReusableProposals()
         }
@@ -240,8 +267,51 @@ class JobApplicationViewModel @Inject constructor(
         saveCurrentDraft()
     }
 
-    fun submitJobApplication() {
+    fun toggleScheduleSlot(date: java.time.LocalDate, hour: Int) {
+        val dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val currentSchedules = _state.value.workSchedules.toMutableMap()
+        val currentDayRanges = currentSchedules[dateStr]?.toMutableList() ?: mutableListOf()
+
+        val startTime = String.format("%02d:00", hour)
+        val endTime = String.format("%02d:00", hour + 1)
+
+        val existingIndex = currentDayRanges.indexOfFirst { it.startTime == startTime }
+        if (existingIndex >= 0) {
+            currentDayRanges.removeAt(existingIndex)
+        } else {
+            currentDayRanges.add(TimeRangeReq(startTime = startTime, endTime = endTime))
+            currentDayRanges.sortBy { it.startTime }
+        }
+
+        if (currentDayRanges.isEmpty()) {
+            currentSchedules.remove(dateStr)
+        } else {
+            currentSchedules[dateStr] = currentDayRanges
+        }
+
+        updateSchedule(currentSchedules)
+    }
+
+    fun setMaxRetries(max: Int) {
+        _state.update { it.copy(maxRetries = max.coerceAtLeast(1)) }
+    }
+
+    fun submitJobApplication(isRetry: Boolean = false) {
         val currentState = _state.value
+
+        if (isRetry) {
+            if (currentState.retryCount >= currentState.maxRetries) {
+                _state.update {
+                    it.copy(
+                        isSubmitting = false,
+                        errorMessage = "Has alcanzado el límite máximo de ${it.maxRetries} intentos."
+                    )
+                }
+                return
+            }
+            _state.update { it.copy(retryCount = it.retryCount + 1) }
+        }
+
         val req = AddJobApplicationReq(
             jobOfferId = currentState.jobOfferId,
             scheduledDate = currentState.scheduledDate,
@@ -260,7 +330,7 @@ class JobApplicationViewModel @Inject constructor(
             val result = applyToJobOfferUseCase(req)
             result.onSuccess {
                 deleteJobApplicationDraftUseCase(currentState.jobOfferId)
-                _state.update { it.copy(isSubmitting = false, isSuccess = true) }
+                _state.update { it.copy(isSubmitting = false, isSuccess = true, retryCount = 0) }
             }.onFailure { error ->
                 _state.update {
                     it.copy(
@@ -274,5 +344,16 @@ class JobApplicationViewModel @Inject constructor(
 
     fun dismissError() {
         _state.update { it.copy(errorMessage = "") }
+    }
+
+    fun resetSubmissionState() {
+        _state.update {
+            it.copy(
+                isSubmitting = false,
+                isSuccess = false,
+                errorMessage = "",
+                retryCount = 0
+            )
+        }
     }
 }
